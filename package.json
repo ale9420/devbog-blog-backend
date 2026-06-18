@@ -1,0 +1,44 @@
+{
+  "name": "devbog-blog-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Strapi application",
+  "scripts": {
+    "build": "strapi build",
+    "console": "strapi console",
+    "deploy": "strapi deploy",
+    "dev": "strapi develop",
+    "develop": "strapi develop",
+    "seed:example": "node ./scripts/seed.js",
+    "start": "strapi start",
+    "strapi": "strapi",
+    "upgrade": "npx @strapi/upgrade latest",
+    "upgrade:dry": "npx @strapi/upgrade latest --dry"
+  },
+  "dependencies": {
+    "@strapi/i18n": "^5.41.1",
+    "@strapi/plugin-users-permissions": "^5.41.1",
+    "@strapi/provider-upload-local": "^5.41.1",
+    "@strapi/strapi": "^5.41.1",
+    "pg": "^8.20.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.3",
+    "strapi-plugin-comments": "^3.2.3",
+    "styled-components": "^6.3.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "better-sqlite3": "12.6.2",
+    "esbuild": "^0.28.0",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20.0.0 <=24.x.x",
+    "npm": ">=6.0.0"
+  },
+  "strapi": {
+    "uuid": "c8f9eb3b-3208-4a3d-b35a-944b4dde5743",
+    "installId": "964b072232ae06acbf76e84e14c792edb72cb22d44ea04c713df924ad2c47907"
+  }
+}
