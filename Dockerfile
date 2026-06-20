@@ -23,10 +23,9 @@ ENV NODE_ENV=production
 RUN apk add --no-cache curl
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/dist/config ./config
+COPY --from=build /app/dist/src ./src
 COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/config ./config
-COPY --from=build /app/src ./src
 COPY --from=build /app/database ./database
 COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/server.js ./server.js

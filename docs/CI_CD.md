@@ -150,7 +150,8 @@ Multi-stage build optimized for production:
 2. **Deps stage**: Installs production dependencies only
 3. **Build stage**: Installs all dependencies and builds Strapi
 4. **Production stage**: 
-   - Copies only necessary files (dist, config, src, etc.)
+   - Copies compiled JavaScript from `dist/config` and `dist/src` (not TypeScript source)
+   - Copies `database/` and `scripts/` directories (already JavaScript)
    - Installs `curl` for health checks
    - Exposes port 1337
    - Defines health check
@@ -159,6 +160,8 @@ Multi-stage build optimized for production:
 - Smaller final image (no build tools or dev dependencies)
 - Faster deployments
 - More secure (no source code or secrets in final image)
+
+**Important:** The Dockerfile copies compiled JavaScript files from `dist/config` and `dist/src`, not the TypeScript source files. Strapi's production runtime only loads `.js` or `.json` config files, so copying `.ts` files would cause startup failures.
 
 ### .dockerignore
 
