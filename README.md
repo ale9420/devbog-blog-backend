@@ -32,6 +32,16 @@ npm run build
 yarn build
 ```
 
+### `generate:keys`
+
+Generate secure random values for required Strapi environment variables (APP_KEYS, API_TOKEN_SALT, ADMIN_JWT_SECRET, TRANSFER_TOKEN_SALT, JWT_SECRET, ENCRYPTION_KEY).
+
+```
+npm run generate:keys
+```
+
+Update your `.env` file with the generated values.
+
 ## ⚙️ Deployment
 
 Strapi gives you many possible deployment options for your project including [Strapi Cloud](https://cloud.strapi.io). Browse the [deployment section of the documentation](https://docs.strapi.io/dev-docs/deployment) to find the best solution for your use case.
