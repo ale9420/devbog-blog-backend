@@ -228,10 +228,15 @@ Project: devbog
 See [Environment Variables](#environment-variables) section below.
 
 **Volume (Advanced → Mounts):**
-- Type: Bind Mount
-- Host Path: `../files/strapi-uploads`
-- Container Path: `/app/public/uploads`
-- Purpose: Persist uploaded media files across deployments
+
+Two volumes are required for proper operation:
+
+| Type | Host Path | Container Path | Purpose |
+|------|-----------|----------------|---------|
+| Bind Mount | `../files/strapi-uploads` | `/app/public/uploads` | Persist uploaded media files across deployments |
+| Bind Mount | `../files/strapi-tmp` | `/app/.tmp` | Persist SQLite temp files (fallback if DB_CLIENT is not set) |
+
+**Note:** The Dockerfile creates both directories at build time as a fallback, so the container can start even if volume mounts aren't configured yet. However, without the volume mounts, uploaded files will be lost on each redeployment.
 
 **Health Check (Advanced → Swarm Settings):**
 ```json
@@ -363,6 +368,18 @@ docker build -t test-build .
 1. Verify domain settings: Container Port should be `1337`
 2. Check Traefik logs in Dokploy
 3. Verify DNS: `api.bogdev.com.co` should point to VPS IP
+
+### Upload Folder Not Found at Startup
+
+**Symptom:** Deployment fails with error: `The upload folder (/app/public/uploads) doesn't exist or is not accessible`.
+
+**Cause:** Strapi's local upload provider requires the uploads directory to exist at startup. The Dockerfile creates this directory as a fallback, but if it's missing, Strapi crashes immediately.
+
+**Solution:**
+1. The Dockerfile already creates `/app/public/uploads` at build time — ensure you're using the latest image
+2. For production, configure the volume mount in Dokploy → App → Advanced → Mounts:
+   - Host Path: `../files/strapi-uploads`
+   - Container Path: `/app/public/uploads`
 
 ### Uploaded Files Disappear After Deployment
 

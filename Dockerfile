@@ -23,6 +23,9 @@ ENV DATABASE_CLIENT=postgres
 # Install curl for health checks
 RUN apk add --no-cache curl
 
+# Create required directories
+RUN mkdir -p /app/public/uploads /app/.tmp
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist/config ./config
 COPY --from=build /app/dist/src ./src
