@@ -118,7 +118,7 @@ The `build-and-push` job runs on GitHub's Ubuntu runners:
 
 After the image is pushed, the `deploy` job triggers Dokploy:
 
-1. **Call Dokploy API**: Uses `dokploy/dokploy-action@v1`
+1. **Call Dokploy API**: Uses `benbristow/dokploy-deploy-action@0.2.2`
 2. **Dokploy pulls image**: Fetches the new image from GHCR
 3. **Health check**: Dokploy waits for `/_health` endpoint to return 200
 4. **Switch traffic**: If healthy, routes traffic to new container
