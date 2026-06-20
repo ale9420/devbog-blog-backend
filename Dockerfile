@@ -18,6 +18,7 @@ RUN npm run build
 # --- Production ---
 FROM base AS production
 ENV NODE_ENV=production
+ENV DATABASE_CLIENT=postgres
 
 # Install curl for health checks
 RUN apk add --no-cache curl
