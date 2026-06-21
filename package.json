@@ -17,6 +17,7 @@
     "upgrade:dry": "npx @strapi/upgrade latest --dry"
   },
   "dependencies": {
+    "@frkntmbs/strapi-plugin-image-optimizer": "^1.0.2",
     "@notum-cz/strapi-plugin-seo": "^2.0.12",
     "@strapi/i18n": "^5.41.1",
     "@strapi/plugin-users-permissions": "^5.41.1",
