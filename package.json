@@ -17,6 +17,7 @@
     "upgrade:dry": "npx @strapi/upgrade latest --dry"
   },
   "dependencies": {
+    "@notum-cz/strapi-plugin-seo": "^2.0.12",
     "@strapi/i18n": "^5.41.1",
     "@strapi/plugin-users-permissions": "^5.41.1",
     "@strapi/provider-upload-local": "^5.41.1",
