@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and Push Docker Image
 
 on:
   push:
@@ -43,14 +43,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
-
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Dokploy Deployment
-        uses: benbristow/dokploy-deploy-action@0.2.2
-        with:
-          dokploy_url: ${{ secrets.DOKPLOY_SERVER_URL }}
-          api_token: ${{ secrets.DOKPLOY_API_KEY }}
-          application_id: ${{ secrets.DOKPLOY_APPLICATION_ID }}
