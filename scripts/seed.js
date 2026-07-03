@@ -101,7 +101,7 @@ async function uploadFile(file, name) {
 async function createEntry({ model, entry }) {
   try {
     // Actually create the entry in Strapi
-    await strapi.documents(`api::${model}.${model}`).create({
+    return await strapi.documents(`api::${model}.${model}`).create({
       data: entry,
     });
   } catch (error) {
@@ -171,16 +171,25 @@ async function importArticles() {
     const cover = await checkFileExistsBeforeUpload([`${article.slug}.jpg`]);
     const updatedBlocks = await updateBlocks(article.blocks);
 
-    await createEntry({
+    const created = await createEntry({
       model: 'article',
       entry: {
         ...article,
         cover,
         blocks: updatedBlocks,
-        // Make sure it's not a draft
-        publishedAt: Date.now(),
       },
     });
+
+    // Publish so the articles are visible to the public API
+    if (created?.documentId) {
+      try {
+        await strapi.documents('api::article.article').publish({
+          documentId: created.documentId,
+        });
+      } catch (error) {
+        console.error({ article: article.slug, error });
+      }
+    }
   }
 }
 
@@ -192,8 +201,6 @@ async function importGlobal() {
     entry: {
       ...global,
       favicon,
-      // Make sure it's not a draft
-      publishedAt: Date.now(),
       defaultSeo: {
         ...global.defaultSeo,
         shareImage,
@@ -210,8 +217,6 @@ async function importAbout() {
     entry: {
       ...about,
       blocks: updatedBlocks,
-      // Make sure it's not a draft
-      publishedAt: Date.now(),
     },
   });
 }

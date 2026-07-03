@@ -9,10 +9,7 @@
   "attributes": {
     "socialNetwork": {
       "type": "enumeration",
-      "enum": [
-        "Facebook",
-        "Twitter"
-      ],
+      "enum": ["Facebook", "Twitter"],
       "required": true
     },
     "title": {
@@ -26,11 +23,7 @@
       "required": true
     },
     "image": {
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos"
-      ],
+      "allowedTypes": ["images", "files", "videos"],
       "type": "media",
       "multiple": false
     }

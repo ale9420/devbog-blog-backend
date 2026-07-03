@@ -62,10 +62,12 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
         },
       },
       entryRelation: {
-        contentTypes: [{
-          name: 'api::article.article',
-          field: 'comments',
-        }],
+        contentTypes: [
+          {
+            name: 'api::article.article',
+            field: 'comments',
+          },
+        ],
       },
     },
   },

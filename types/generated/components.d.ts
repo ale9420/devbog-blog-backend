@@ -75,8 +75,7 @@ export interface SharedSeo extends Struct.ComponentSchema {
         maxLength: 160;
         minLength: 50;
       }>;
-    metaImage: Schema.Attribute.Media<'images' | 'files' | 'videos'> &
-      Schema.Attribute.Required;
+    metaImage: Schema.Attribute.Media<'images' | 'files' | 'videos'> & Schema.Attribute.Required;
     metaRobots: Schema.Attribute.String;
     metaSocial: Schema.Attribute.Component<'shared.meta-social', true>;
     metaTitle: Schema.Attribute.String &

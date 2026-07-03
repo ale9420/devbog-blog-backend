@@ -14,7 +14,15 @@
     "start": "strapi start",
     "strapi": "strapi",
     "upgrade": "npx @strapi/upgrade latest",
-    "upgrade:dry": "npx @strapi/upgrade latest --dry"
+    "upgrade:dry": "npx @strapi/upgrade latest --dry",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@frkntmbs/strapi-plugin-image-optimizer": "^1.0.2",
@@ -31,10 +39,18 @@
     "styled-components": "^6.3.12"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
+    "@types/supertest": "^7.2.0",
     "better-sqlite3": "12.6.2",
     "esbuild": "^0.28.0",
-    "typescript": "^5"
+    "eslint": "^10.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "jest": "^30.4.2",
+    "prettier": "^3.8.4",
+    "supertest": "^7.2.2",
+    "typescript": "^5",
+    "typescript-eslint": "^8.61.1"
   },
   "engines": {
     "node": ">=20.0.0 <=24.x.x",

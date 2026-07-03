@@ -36,8 +36,12 @@
 
     // Do not include admin files in the server compilation
     "src/admin/",
-    // Do not include test files
+    // Do not include test files or test harness
+    "tests/",
     "**/*.test.*",
+    // Do not include tooling configs compiled separately
+    "jest.config.js",
+    "eslint.config.mjs",
     // Do not include plugins in the server compilation
     "src/plugins/**"
   ]

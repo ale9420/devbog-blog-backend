@@ -46,11 +46,7 @@
       },
       "multiple": false,
       "required": false,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos"
-      ]
+      "allowedTypes": ["images", "files", "videos"]
     },
     "author": {
       "type": "relation",
@@ -71,12 +67,7 @@
           "localized": true
         }
       },
-      "components": [
-        "shared.media",
-        "shared.quote",
-        "shared.rich-text",
-        "shared.slider"
-      ]
+      "components": ["shared.media", "shared.quote", "shared.rich-text", "shared.slider"]
     },
     "seo": {
       "type": "component",

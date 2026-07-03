@@ -1,0 +1,9 @@
+dist/
+build/
+node_modules/
+.tmp/
+.cache/
+.strapi/
+public/uploads/
+coverage/
+package-lock.json

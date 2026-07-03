@@ -20,6 +20,7 @@ This document explains how the continuous integration and deployment pipeline wo
 When you push code to the `main` branch, an automated pipeline builds a Docker image, pushes it to GitHub Container Registry (GHCR), and triggers a deployment to our Hetzner VPS running Dokploy.
 
 **Key benefits:**
+
 - Zero-downtime deployments (health checks ensure the new version is healthy before switching)
 - Automatic rollback if deployment fails
 - Consistent, reproducible builds
@@ -91,6 +92,7 @@ When you push code to the `main` branch, an automated pipeline builds a Docker i
 ## Workflow Steps
 
 ### 1. Trigger
+
 The workflow triggers automatically on every push to the `main` branch.
 
 **File:** `.github/workflows/deploy.yml`
@@ -98,7 +100,7 @@ The workflow triggers automatically on every push to the `main` branch.
 ```yaml
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
 ```
 
 ### 2. Build Job
@@ -111,6 +113,7 @@ The `build-and-push` job runs on GitHub's Ubuntu runners:
 4. **Push to GHCR**: Tags with commit SHA and `latest`
 
 **Image tags created:**
+
 - `ghcr.io/<org>/devbog-blog-backend:<commit-sha>` (e.g., `abc1234`)
 - `ghcr.io/<org>/devbog-blog-backend:latest` (only on main branch)
 
@@ -149,7 +152,7 @@ Multi-stage build optimized for production:
 1. **Base stage**: Node 20 Alpine with production environment
 2. **Deps stage**: Installs production dependencies only
 3. **Build stage**: Installs all dependencies and builds Strapi
-4. **Production stage**: 
+4. **Production stage**:
    - Copies compiled JavaScript from `dist/config` and `dist/src` (not TypeScript source)
    - Copies admin panel build from `dist/build` (required for `/admin` UI)
    - Copies `database/` and `scripts/` directories (already JavaScript)
@@ -158,6 +161,7 @@ Multi-stage build optimized for production:
    - Defines health check
 
 **Why multi-stage?**
+
 - Smaller final image (no build tools or dev dependencies)
 - Faster deployments
 - More secure (no source code or secrets in final image)
@@ -169,6 +173,7 @@ Multi-stage build optimized for production:
 **Location:** `.dockerignore`
 
 Excludes unnecessary files from the Docker image:
+
 - `node_modules` (rebuilt inside container)
 - `.git` (not needed at runtime)
 - `.env` files (secrets injected via Dokploy)
@@ -180,6 +185,7 @@ Excludes unnecessary files from the Docker image:
 **Location:** `.github/workflows/deploy.yml`
 
 Two jobs:
+
 1. `build-and-push`: Builds and pushes Docker image
 2. `deploy`: Triggers Dokploy deployment (depends on build success)
 
@@ -216,11 +222,13 @@ Project: devbog
 ### Application Settings
 
 **General:**
+
 - Source Type: Docker Registry
 - Docker Image: `ghcr.io/<org>/devbog-blog-backend:latest`
 - Registry: GHCR (credentials configured in Dokploy → Registry)
 
 **Domain:**
+
 - Host: `api.bogdev.com.co`
 - Container Port: `1337`
 - HTTPS: Enabled (Let's Encrypt)
@@ -232,14 +240,15 @@ See [Environment Variables](#environment-variables) section below.
 
 Two volumes are required for proper operation:
 
-| Type | Host Path | Container Path | Purpose |
-|------|-----------|----------------|---------|
-| Bind Mount | `../files/strapi-uploads` | `/app/public/uploads` | Persist uploaded media files across deployments |
-| Bind Mount | `../files/strapi-tmp` | `/app/.tmp` | Persist SQLite temp files (fallback if DB_CLIENT is not set) |
+| Type       | Host Path                 | Container Path        | Purpose                                                      |
+| ---------- | ------------------------- | --------------------- | ------------------------------------------------------------ |
+| Bind Mount | `../files/strapi-uploads` | `/app/public/uploads` | Persist uploaded media files across deployments              |
+| Bind Mount | `../files/strapi-tmp`     | `/app/.tmp`           | Persist SQLite temp files (fallback if DB_CLIENT is not set) |
 
 **Note:** The Dockerfile creates both directories at build time as a fallback, so the container can start even if volume mounts aren't configured yet. However, without the volume mounts, uploaded files will be lost on each redeployment.
 
 **Health Check (Advanced → Swarm Settings):**
+
 ```json
 {
   "Test": ["CMD", "curl", "-f", "http://localhost:1337/_health"],
@@ -251,6 +260,7 @@ Two volumes are required for proper operation:
 ```
 
 **Update Config (for auto-rollback):**
+
 ```json
 {
   "Parallelism": 1,
@@ -264,11 +274,11 @@ Two volumes are required for proper operation:
 
 Required secrets in GitHub repository (Settings → Secrets → Actions):
 
-| Secret | Description | Where to Find |
-|--------|-------------|---------------|
-| `DOKPLOY_SERVER_URL` | Dokploy panel URL | `https://dokploy.bogdev.com.co` |
-| `DOKPLOY_API_KEY` | API authentication token | Dokploy → Profile → API Keys |
-| `DOKPLOY_APPLICATION_ID` | Application identifier | Dokploy → App → General tab (in URL) |
+| Secret                   | Description              | Where to Find                        |
+| ------------------------ | ------------------------ | ------------------------------------ |
+| `DOKPLOY_SERVER_URL`     | Dokploy panel URL        | `https://dokploy.bogdev.com.co`      |
+| `DOKPLOY_API_KEY`        | API authentication token | Dokploy → Profile → API Keys         |
+| `DOKPLOY_APPLICATION_ID` | Application identifier   | Dokploy → App → General tab (in URL) |
 
 ---
 
@@ -308,6 +318,7 @@ UPLOAD_PATH=/app/public/uploads
 ### Generating Security Keys
 
 Run locally:
+
 ```bash
 node scripts/generate-keys.js
 ```
@@ -325,11 +336,13 @@ Copy the output values into Dokploy's environment variables.
 **Symptom:** GitHub Actions fails with "Build and push Docker image" error.
 
 **Common causes:**
+
 1. **TypeScript errors**: Run `npm run build` locally to catch errors
 2. **Missing dependencies**: Ensure `package-lock.json` is committed
 3. **Docker build context**: Check `.dockerignore` isn't excluding needed files
 
 **Solution:**
+
 ```bash
 # Test build locally
 npm run build
@@ -343,12 +356,14 @@ docker build -t test-build .
 **Symptom:** Build succeeds but Dokploy deployment fails.
 
 **Common causes:**
+
 1. **GHCR authentication**: Verify Dokploy has GHCR credentials
 2. **Health check fails**: App crashes on startup or `/_health` returns non-200
 3. **Environment variables missing**: Check Dokploy app env vars
 4. **Database connection**: Verify DB credentials and internal hostname
 
 **Solution:**
+
 1. Check Dokploy deployment logs (Deployments tab)
 2. Check application logs (Logs tab)
 3. Verify health endpoint manually:
@@ -361,11 +376,13 @@ docker build -t test-build .
 **Symptom:** Deployment succeeds but site shows 502 error.
 
 **Common causes:**
+
 1. **Wrong port**: Dokploy domain configured with wrong container port
 2. **Traefik routing**: Domain not properly linked to app
 3. **SSL certificate**: Let's Encrypt certificate not issued
 
 **Solution:**
+
 1. Verify domain settings: Container Port should be `1337`
 2. Check Traefik logs in Dokploy
 3. Verify DNS: `api.bogdev.com.co` should point to VPS IP
@@ -377,6 +394,7 @@ docker build -t test-build .
 **Cause:** Strapi's local upload provider requires the uploads directory to exist at startup. The Dockerfile creates this directory as a fallback, but if it's missing, Strapi crashes immediately.
 
 **Solution:**
+
 1. The Dockerfile already creates `/app/public/uploads` at build time — ensure you're using the latest image
 2. For production, configure the volume mount in Dokploy → App → Advanced → Mounts:
    - Host Path: `../files/strapi-uploads`
@@ -389,6 +407,7 @@ docker build -t test-build .
 **Cause:** Volume not configured or misconfigured.
 
 **Solution:**
+
 1. Check Dokploy → App → Advanced → Mounts
 2. Verify bind mount: `../files/strapi-uploads` → `/app/public/uploads`
 3. Ensure `UPLOAD_PATH=/app/public/uploads` in environment variables
@@ -400,6 +419,7 @@ docker build -t test-build .
 **Cause:** Health check failed (app didn't respond to `/_health` within 60 seconds).
 
 **Solution:**
+
 1. Check Dokploy deployment logs for health check status
 2. Verify app starts successfully:
    - Check application logs for startup errors
@@ -412,6 +432,7 @@ docker build -t test-build .
 **Symptom:** `dokploy.bogdev.com.co` is unreachable.
 
 **Solution:**
+
 1. SSH into VPS and check Dokploy status:
    ```bash
    docker service ls
@@ -427,11 +448,13 @@ docker build -t test-build .
 ### Modifying the Dockerfile
 
 **When to modify:**
+
 - Adding system dependencies (e.g., image processing libraries)
 - Changing Node.js version
 - Optimizing build process
 
 **Testing changes:**
+
 ```bash
 # Build locally
 docker build -t devbog-backend:test .
@@ -448,6 +471,7 @@ curl http://localhost:1337/_health
 ### Adding Environment Variables
 
 **Steps:**
+
 1. Add variable to Dokploy UI (App → Environment)
 2. If it's a secret, mark it as sensitive
 3. Redeploy the app (Dokploy → Deployments → Deploy)
@@ -459,12 +483,13 @@ curl http://localhost:1337/_health
 **Current behavior:** Deploys on every push to `main`.
 
 **To add staging environment:**
+
 ```yaml
 on:
   push:
     branches:
-      - main      # production
-      - develop   # staging
+      - main # production
+      - develop # staging
 ```
 
 Then use different `DOKPLOY_APPLICATION_ID` secrets based on branch.
@@ -472,6 +497,7 @@ Then use different `DOKPLOY_APPLICATION_ID` secrets based on branch.
 ### Disabling Auto-Deploy
 
 **Temporarily disable:**
+
 1. Go to Dokploy → App → Deployments
 2. Toggle off "Auto Deploy"
 
@@ -483,6 +509,7 @@ Remove or comment out the `deploy` job in `.github/workflows/deploy.yml`.
 If you need to deploy manually (bypass GitHub Actions):
 
 1. Build and push image locally:
+
    ```bash
    docker build -t ghcr.io/<org>/devbog-blog-backend:manual .
    docker push ghcr.io/<org>/devbog-blog-backend:manual
@@ -510,6 +537,7 @@ If you need to deploy manually (bypass GitHub Actions):
 ## Questions?
 
 If you encounter issues not covered in this document:
+
 1. Check Dokploy deployment logs
 2. Check GitHub Actions logs
 3. Review application logs in Dokploy
