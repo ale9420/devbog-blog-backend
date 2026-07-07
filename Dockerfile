@@ -37,6 +37,8 @@ COPY --from=build /app/server.js ./server.js
 
 EXPOSE 1337
 
+VOLUME ["/app/public/uploads", "/app/.tmp"]
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:1337/_health || exit 1
 
