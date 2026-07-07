@@ -5,7 +5,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
     config: {
       provider: '@strapi/provider-upload-local',
       providerOptions: {
-        destination: env('UPLOAD_PATH', '/var/www/devbog-blog-backend/uploads'),
+        destination: env('UPLOAD_PATH', './public/uploads'),
       },
       breakpoints: {
         xlarge: 1920,
