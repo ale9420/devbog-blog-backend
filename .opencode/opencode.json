@@ -17,6 +17,15 @@
       "command": ["npx", "-y", "@playwright/mcp"],
       "enabled": false,
       "env": {}
+    },
+    "strapi": {
+      "type": "local",
+      "command": ["npx", "-y", "@strapi/mcp"],
+      "enabled": false,
+      "env": {
+        "STRAPI_URL": "{env:STRAPI_URL}",
+        "STRAPI_API_TOKEN": "{env:STRAPI_API_TOKEN}"
+      }
     }
   }
 }
