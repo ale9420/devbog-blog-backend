@@ -19,13 +19,12 @@
       "env": {}
     },
     "strapi": {
-      "type": "local",
-      "command": ["npx", "-y", "@strapi/mcp"],
-      "enabled": false,
-      "env": {
-        "STRAPI_URL": "{env:STRAPI_URL}",
-        "STRAPI_API_TOKEN": "{env:STRAPI_API_TOKEN}"
-      }
+      "type": "streamable-http",
+      "url": "{env:STRAPI_MCP_URL}/mcp",
+      "headers": {
+        "Authorization": "Bearer {env:STRAPI_MCP_ADMIN_TOKEN}"
+      },
+      "enabled": false
     }
   }
 }
