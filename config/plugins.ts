@@ -3,9 +3,17 @@ import type { Core } from '@strapi/strapi';
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => ({
   upload: {
     config: {
-      provider: '@strapi/provider-upload-local',
+      provider: '@strapi/provider-upload-aws-s3',
       providerOptions: {
-        destination: env('UPLOAD_PATH', './public/uploads'),
+        accessKeyId: env('R2_ACCESS_KEY_ID'),
+        secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
+        endpoint: `https://${env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+        params: {
+          Bucket: env('R2_BUCKET'),
+        },
+        region: 'auto',
+        baseUrl: env('R2_BASE_URL'),
+        forcePathStyle: false,
       },
       breakpoints: {
         xlarge: 1920,

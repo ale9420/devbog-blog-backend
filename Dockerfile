@@ -24,7 +24,7 @@ ENV DATABASE_CLIENT=postgres
 RUN apk add --no-cache curl
 
 # Create required directories
-RUN mkdir -p /app/public/uploads /app/.tmp
+RUN mkdir -p /app/.tmp
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist/config ./config
@@ -37,7 +37,7 @@ COPY --from=build /app/server.js ./server.js
 
 EXPOSE 1337
 
-VOLUME ["/app/public/uploads", "/app/.tmp"]
+VOLUME ["/app/.tmp"]
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:1337/_health || exit 1

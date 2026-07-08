@@ -17,9 +17,7 @@ services:
       DATABASE_USERNAME: ${DATABASE_USERNAME:-strapi}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-strapi}
       DATABASE_SSL: ${DATABASE_SSL:-false}
-      UPLOAD_PATH: /app/public/uploads
     volumes:
-      - strapi-uploads:/app/public/uploads
       - strapi-tmp:/app/.tmp
     depends_on:
       db:
@@ -47,8 +45,6 @@ services:
       retries: 5
 
 volumes:
-  strapi-uploads:
-    driver: local
   strapi-tmp:
     driver: local
   strapi-db-data:

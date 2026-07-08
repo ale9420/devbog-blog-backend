@@ -29,7 +29,7 @@
     "@notum-cz/strapi-plugin-seo": "^2.0.12",
     "@strapi/i18n": "^5.41.1",
     "@strapi/plugin-users-permissions": "^5.41.1",
-    "@strapi/provider-upload-local": "^5.41.1",
+    "@strapi/provider-upload-aws-s3": "^5.50.0",
     "@strapi/strapi": "^5.41.1",
     "pg": "^8.20.0",
     "react": "^18.3.1",
