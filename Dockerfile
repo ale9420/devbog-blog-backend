@@ -34,6 +34,7 @@ COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/database ./database
 COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/server.js ./server.js
+COPY --from=build /app/public ./public
 
 EXPOSE 1337
 
