@@ -7,7 +7,9 @@ const config: Core.Config.Middlewares = [
     name: 'strapi::security',
     config: {
       contentSecurityPolicy: {
+        useDefaults: true,
         directives: {
+          'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
           'img-src': ["'self'", 'data:', 'blob:', 'https://market-assets.strapi.io', 'https://resources.bogdev.com.co'],
         },
       },
