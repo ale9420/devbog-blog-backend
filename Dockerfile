@@ -13,6 +13,8 @@ FROM base AS build
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+# Force clean rebuild of admin bundle when plugins change
+RUN rm -rf dist .strapi
 RUN npm run build
 
 # --- Production ---
