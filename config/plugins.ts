@@ -28,16 +28,6 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
   seo: {
     enabled: true,
   },
-  'image-optimizer': {
-    enabled: false,
-    config: {
-      defaultChoice: 'global',
-      defaultMode: 'webp',
-      webpQuality: 82,
-      jpegQuality: 80,
-      pngCompressionLevel: 9,
-    },
-  },
   comments: {
     enabled: true,
     config: {
