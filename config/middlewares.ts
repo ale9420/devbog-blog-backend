@@ -10,7 +10,20 @@ const config: Core.Config.Middlewares = [
         useDefaults: true,
         directives: {
           'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-          'img-src': ["'self'", 'data:', 'blob:', 'https://market-assets.strapi.io', 'https://resources.bogdev.com.co'],
+          'img-src': [
+            "'self'",
+            'data:',
+            'blob:',
+            'https://market-assets.strapi.io',
+            'https://resources.bogdev.com.co',
+          ],
+          'media-src': [
+            "'self'",
+            'data:',
+            'blob:',
+            'https://market-assets.strapi.io',
+            'https://resources.bogdev.com.co',
+          ],
         },
       },
     },
@@ -20,6 +33,7 @@ const config: Core.Config.Middlewares = [
   'strapi::query',
   'strapi::body',
   'strapi::session',
+  'strapi::favicon',
   'strapi::public',
 ];
 

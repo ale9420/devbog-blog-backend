@@ -5,17 +5,20 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
     config: {
       provider: '@strapi/provider-upload-aws-s3',
       providerOptions: {
-        credentials: {
-          accessKeyId: env('R2_ACCESS_KEY_ID'),
-          secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
-        },
-        endpoint: `https://${env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
-        params: {
-          Bucket: env('R2_BUCKET'),
-        },
-        region: 'auto',
         baseUrl: env('R2_BASE_URL'),
-        forcePathStyle: false,
+        s3Options: {
+          credentials: {
+            accessKeyId: env('R2_ACCESS_KEY_ID'),
+            secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
+          },
+          endpoint: `https://${env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+          region: 'auto',
+          params: {
+            Bucket: env('R2_BUCKET'),
+            // Cloudflare R2 does not support ACLs; explicitly omit the header.
+            ACL: undefined,
+          },
+        },
       },
       breakpoints: {
         xlarge: 1920,
