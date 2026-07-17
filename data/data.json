@@ -1,52 +1,131 @@
 {
   "global": {
-    "siteName": "Strapi Blog",
+    "siteName": "Devbog",
     "defaultSeo": {
-      "metaTitle": "Page",
-      "metaDescription": "A blog made with Strapi",
-      "shareImage": null
+      "metaTitle": "Devbog - A Developer Blog",
+      "metaDescription": "A modern developer blog built with Strapi and Next.js, covering web development, DevOps, and tech culture.",
+      "metaSocial": [
+        {
+          "socialNetwork": "Twitter",
+          "title": "Devbog - A Developer Blog",
+          "description": "A modern developer blog covering web dev and tech."
+        },
+        {
+          "socialNetwork": "Facebook",
+          "title": "Devbog - A Developer Blog",
+          "description": "A modern developer blog covering web dev and tech."
+        }
+      ],
+      "keywords": "blog, developer, web, tech, programming",
+      "metaRobots": "index, follow",
+      "metaViewport": "width=device-width, initial-scale=1",
+      "canonicalURL": "https://devbog.com"
     },
-    "siteDescription": "A Blog made with Strapi",
-    "favicon": null
+    "siteDescription": "A modern developer blog built with Strapi and Next.js"
   },
   "about": {
-    "title": "About the strapi blog",
+    "title": "About",
+    "seo": {
+      "metaTitle": "About - Devbog",
+      "metaDescription": "Software developer based in Bogota, Colombia. Passionate about AI, Linux, and building great software. Learn more about my journey.",
+      "keywords": "about, developer, bogota, colombia, ai, linux, software",
+      "metaRobots": "index, follow",
+      "metaViewport": "width=device-width, initial-scale=1",
+      "canonicalURL": "https://devbog.com/about"
+    },
     "blocks": [
       {
-        "__component": "shared.quote",
-        "title": "Thelonius Monk",
-        "body": "You've got to dig it to dig it, you dig?"
+        "__component": "shared.hero",
+        "title": "Alejandro",
+        "subtitle": "Software developer based in Bogota, Colombia"
       },
       {
         "__component": "shared.rich-text",
-        "body": "## Dedit imago conspicuus cum capillis totidem inhibere\n\nLorem markdownum **rerum**, est limine: columbas: ab infelix hostem arbore nudis\ncrudelis. Videtur reliquit ambo ferrum dote sub amne fatis **illuc**, in magis,\nnec."
+        "body": "Welcome to my blog! I'm a software developer passionate about building great software, exploring new technologies, and sharing what I learn along the way.\n\n## Background\n\nI'm based in Bogota, Colombia, and I've been working in software development for several years. I enjoy working across the full stack, from crafting clean user interfaces to designing robust backend systems."
       },
       {
-        "__component": "shared.media",
-        "file": "coffee-art.jpg"
+        "__component": "shared.topic-card",
+        "title": "Artificial Intelligence",
+        "description": "Exploring machine learning, LLMs, and how AI is transforming software development.",
+        "icon": "cpu-chip"
+      },
+      {
+        "__component": "shared.topic-card",
+        "title": "Software Development",
+        "description": "Clean code, architecture patterns, and building maintainable applications.",
+        "icon": "code-bracket"
+      },
+      {
+        "__component": "shared.topic-card",
+        "title": "Linux & Open Source",
+        "description": "Linux systems, open source contributions, and the philosophy behind free software.",
+        "icon": "command-line"
+      },
+      {
+        "__component": "shared.topic-card",
+        "title": "DevOps & Cloud",
+        "description": "Containerization, CI/CD pipelines, cloud infrastructure, and deployment strategies.",
+        "icon": "cloud"
+      },
+      {
+        "__component": "shared.social-links",
+        "title": "Connect",
+        "description": "Feel free to reach out or follow me on social media.",
+        "linkedin": "https://linkedin.com/in/ale9420",
+        "github": "https://github.com/ale9420",
+        "codeberg": "https://codeberg.org/ale9420",
+        "mastodon": "https://mastodon.social/@ale9420"
+      },
+      {
+        "__component": "shared.tech-stack",
+        "title": "Tech Stack",
+        "technologies": [
+          { "name": "Vue.js" },
+          { "name": "Nuxt" },
+          { "name": "TypeScript" },
+          { "name": "Node.js" },
+          { "name": "Flutter" },
+          { "name": "Docker" },
+          { "name": "NGINX" },
+          { "name": "Linux" },
+          { "name": "PostgreSQL" },
+          { "name": "Strapi" },
+          { "name": "Tailwind CSS" },
+          { "name": "Git" }
+        ]
       }
     ]
   },
   "categories": [
     {
-      "name": "news",
-      "slug": "news"
+      "name": "Web Development",
+      "slug": "web-development",
+      "description": "Frontend and backend web development topics including frameworks, APIs, and best practices."
     },
     {
-      "name": "tech",
-      "slug": "tech"
+      "name": "DevOps",
+      "slug": "devops",
+      "description": "CI/CD, containerization, cloud infrastructure, and deployment strategies."
     },
     {
-      "name": "food",
-      "slug": "food"
+      "name": "Open Source",
+      "slug": "open-source",
+      "description": "Open source projects, contributions, licensing, and community building."
     },
     {
-      "name": "nature",
-      "slug": "nature"
+      "name": "Tech Culture",
+      "slug": "tech-culture",
+      "description": "Remote work, career development, industry trends, and developer lifestyle."
     },
     {
-      "name": "story",
-      "slug": "story"
+      "name": "Tutorials",
+      "slug": "tutorials",
+      "description": "Step-by-step guides and hands-on tutorials for developers of all levels."
+    },
+    {
+      "name": "News",
+      "slug": "news",
+      "description": "Latest news and updates from the tech world."
     }
   ],
   "authors": [
@@ -59,72 +138,232 @@
       "name": "Sarah Baker",
       "email": "sarahbaker@strapi.io",
       "avatar": "sarahbaker@strapi.io.jpg"
+    },
+    {
+      "name": "Alex Rivera",
+      "email": "alex@devbog.com",
+      "avatar": "daviddoe@strapi.io.jpg"
+    },
+    {
+      "name": "Jordan Chen",
+      "email": "jordan@devbog.com",
+      "avatar": "sarahbaker@strapi.io.jpg"
     }
   ],
   "articles": [
     {
-      "title": "The internet's Own boy",
+      "title": "Getting Started with Strapi 5: A Complete Guide",
+      "slug": "getting-started-with-strapi-5",
+      "category": "Tutorials",
+      "author": "David Doe",
+      "description": "Set up and build your first headless CMS with Strapi 5.",
+      "seo": {
+        "metaTitle": "Getting Started with Strapi 5: A Complete Guide",
+        "metaDescription": "Learn how to set up and build your first headless CMS with Strapi 5. Step-by-step guide covering installation, content types, and API access.",
+        "keywords": "strapi, headless cms, api, tutorial, beginner",
+        "metaRobots": "index, follow",
+        "metaViewport": "width=device-width, initial-scale=1",
+        "canonicalURL": "https://devbog.com/getting-started-with-strapi-5"
+      },
+      "blocks": [
+        {
+          "__component": "shared.rich-text",
+          "body": "## What is Strapi?\n\nStrapi is the leading open-source headless CMS. It's fully customizable and developer-first, allowing you to build powerful APIs in minutes.\n\nIn this guide, we'll walk through setting up Strapi 5, creating content types, and consuming the REST API from a frontend application.\n\n## Prerequisites\n\nBefore we begin, make sure you have:\n\n- **Node.js** version 20 or higher\n- **npm** or **yarn** package manager\n- A code editor (VS Code recommended)\n- Basic knowledge of JavaScript/TypeScript"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Installation\n\nCreating a new Strapi project is straightforward:\n\n```\nnpx create-strapi@latest my-project\n```\n\nThis will scaffold a new project with all the defaults. You can choose between a quickstart (SQLite) or custom setup (PostgreSQL, MySQL).\n\n## Creating Your First Content Type\n\nNavigate to the Content-Type Builder in the admin panel and create a new collection type. Add fields like title, description, and body to model your content."
+        },
+        {
+          "__component": "shared.quote",
+          "title": "Pro Tip",
+          "body": "Always plan your content model before creating content types. Think about the relationships between your data and how it will be consumed by your frontend."
+        },
+        {
+          "__component": "shared.media",
+          "file": "coffee-art.jpg"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Consuming the API\n\nOnce your content types are set up and populated, you can access them via the REST API:\n\n```\nGET /api/articles\nGET /api/articles/:id\n```\n\nDon't forget to configure permissions in the admin panel to make your content publicly accessible.\n\n## Conclusion\n\nStrapi 5 makes it incredibly easy to build and manage content APIs. In the next article, we'll explore advanced features like custom controllers, policies, and middleware."
+        }
+      ]
+    },
+    {
+      "title": "Docker Multi-Stage Builds for Node.js Applications",
+      "slug": "docker-multi-stage-builds-nodejs",
+      "category": "DevOps",
+      "author": "Sarah Baker",
+      "description": "Optimize Docker images with multi-stage builds.",
+      "seo": {
+        "metaTitle": "Docker Multi-Stage Builds for Node.js Applications",
+        "metaDescription": "Learn how to use Docker multi-stage builds to create optimized, production-ready images for your Node.js applications. Reduce image size by up to 90%.",
+        "keywords": "docker, multi-stage, nodejs, devops, containers",
+        "metaRobots": "index, follow",
+        "canonicalURL": "https://devbog.com/docker-multi-stage-builds-nodejs"
+      },
+      "blocks": [
+        {
+          "__component": "shared.rich-text",
+          "body": "## Why Multi-Stage Builds?\n\nDocker multi-stage builds allow you to use multiple `FROM` statements in your Dockerfile. Each `FROM` instruction begins a new stage, and you can selectively copy artifacts from one stage to another.\n\nThe result? Dramatically smaller production images that contain only what's needed to run your application."
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## A Typical Node.js Dockerfile\n\nWithout multi-stage builds, your Docker image includes build tools, dev dependencies, and source code that aren't needed at runtime. This bloats your image and increases attack surface.\n\n## The Multi-Stage Approach\n\nHere's how to structure a multi-stage build:\n\n1. **Build stage**: Install all dependencies, compile TypeScript, build assets\n2. **Production stage**: Copy only compiled output and production dependencies\n\nThis approach can reduce your image from 1GB+ to under 200MB."
+        },
+        {
+          "__component": "shared.quote",
+          "title": "Best Practice",
+          "body": "Always use specific version tags for your base images. Using 'latest' can lead to unpredictable builds when the base image changes."
+        },
+        {
+          "__component": "shared.media",
+          "file": "coffee-beans.jpg"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Security Benefits\n\nSmaller images mean fewer CVEs to patch. By excluding build tools and source code from your production image, you reduce the potential attack surface significantly.\n\n## Conclusion\n\nMulti-stage builds are essential for production Node.js deployments. They improve build times, reduce image sizes, and enhance security. Start using them today in your CI/CD pipeline."
+        }
+      ]
+    },
+    {
+      "title": "The Internet's Own Boy: Aaron Swartz",
       "slug": "the-internet-s-own-boy",
-      "category": {
-        "id": 5
-      },
-      "author": {
-        "id": 1
-      },
+      "category": "Tech Culture",
+      "author": "David Doe",
       "description": "Follow the story of Aaron Swartz, the boy who could change the world",
-      "cover": null,
+      "seo": {
+        "metaTitle": "The Internet's Own Boy: Aaron Swartz",
+        "metaDescription": "The inspiring and tragic story of Aaron Swartz, a programming prodigy who fought for open access and internet freedom.",
+        "keywords": "aaron swartz, open access, internet freedom, open source",
+        "metaRobots": "index, follow",
+        "canonicalURL": "https://devbog.com/the-internet-s-own-boy"
+      },
       "blocks": [
         {
           "__component": "shared.rich-text",
-          "body": "## Probant \n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. \n\n## Abit sua\n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. "
+          "body": "## A Prodigy's Journey\n\nAaron Swartz was a programming prodigy who helped create RSS at age 14, co-founded Reddit, and became one of the most influential voices for internet freedom and open access.\n\nHis story is both inspiring and cautionary, highlighting the tension between information freedom and existing legal frameworks."
         },
         {
           "__component": "shared.quote",
-          "title": "Thelonius Monk",
-          "body": "You've got to dig it to dig it, you dig?"
+          "title": "Aaron Swartz",
+          "body": "We need to take information, wherever it is, make our copies and share them with the world."
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## The Fight for Open Access\n\nAaron believed deeply that knowledge should be freely available to everyone. This conviction led him to download millions of academic papers from JSTOR, an act that resulted in federal charges under the Computer Fraud and Abuse Act.\n\nThe case became a rallying point for digital rights activists worldwide."
         },
         {
           "__component": "shared.media",
           "file": "coffee-art.jpg"
         },
         {
-          "__component": "shared.rich-text",
-          "body": "## Spatiantia astra \n\nFoeda, medio silva *errandum*: onus formam munere. Mutata bibulis est auxiliare arces etiamnunc verbis virgineo Priamidas illa Thescelus, nam fit locis lucis auras. Exitus hospes gratulor ut pondere [speslimite](http://www.curas.io/figuram); quid habent, Avernales faciente de. Pervenit Ino sonabile supplex cognoscenti vires, Bacchumque errat miserarum venandi dignabere dedisti. Discrimina iuncosaque virgaque tot sine superest [fissus](http://quos.org/sitet.aspx). Non color esset potest non sumit, sed vix arserat. Nisi immo silva tantum pectusque quos pennis quisquam artus!"
-        },
-        {
           "__component": "shared.slider",
           "files": ["coffee-art.jpg", "coffee-beans.jpg"]
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Legacy\n\nThough Aaron's life was tragically cut short, his legacy lives on through the open access movement, Creative Commons, and the countless developers and activists he inspired.\n\nHis work reminds us that technology should serve humanity, not the other way around."
         }
       ]
     },
     {
-      "title": "This shrimp is awesome",
+      "title": "Building REST APIs with Express and TypeScript",
+      "slug": "building-rest-apis-express-typescript",
+      "category": "Web Development",
+      "author": "Alex Rivera",
+      "description": "Build type-safe REST APIs with Express and TypeScript.",
+      "seo": {
+        "metaTitle": "Building REST APIs with Express and TypeScript",
+        "metaDescription": "Step-by-step guide to building robust, type-safe REST APIs with Express.js and TypeScript. Includes error handling, validation, and testing.",
+        "keywords": "express, typescript, rest api, nodejs, backend",
+        "metaRobots": "index, follow",
+        "canonicalURL": "https://devbog.com/building-rest-apis-express-typescript"
+      },
+      "blocks": [
+        {
+          "__component": "shared.rich-text",
+          "body": "## Why TypeScript for APIs?\n\nTypeScript adds static typing to JavaScript, catching errors at compile time rather than runtime. For API development, this means:\n\n- **Type-safe request/response handling**\n- **Better IDE support and autocomplete**\n- **Self-documenting interfaces**\n- **Fewer runtime errors**"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Setting Up the Project\n\nStart by initializing a new Node.js project with TypeScript:\n\n```\nnpm init -y\nnpm install express cors helmet\nnpm install -D typescript @types/express @types/node ts-node\n```\n\nCreate a `tsconfig.json` with strict mode enabled for maximum type safety."
+        },
+        {
+          "__component": "shared.quote",
+          "title": "Design Principle",
+          "body": "A well-designed API is the most important documentation your application can have. Design it as if someone else will be using it."
+        },
+        {
+          "__component": "shared.media",
+          "file": "coffee-shadow.jpg"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Error Handling\n\nCentralized error handling is crucial for production APIs. Create an error middleware that catches all errors and returns consistent JSON responses:\n\n- Use custom error classes for different HTTP status codes\n- Log errors with structured logging\n- Never expose internal error details to clients in production\n\n## Conclusion\n\nTypeScript and Express make a powerful combination for building reliable, maintainable APIs. The type system catches bugs early and makes refactoring safer."
+        }
+      ]
+    },
+    {
+      "title": "Contributing to Open Source: A Beginner's Guide",
+      "slug": "contributing-to-open-source-beginners",
+      "category": "Open Source",
+      "author": "Jordan Chen",
+      "description": "Everything you need to know to make your first open source contribution.",
+      "seo": {
+        "metaTitle": "Contributing to Open Source: A Beginner's Guide",
+        "metaDescription": "Learn how to find projects, understand contribution guidelines, and make your first open source pull request. Includes tips and common pitfalls to avoid.",
+        "keywords": "open source, contributing, github, beginner, pull request",
+        "metaRobots": "index, follow",
+        "canonicalURL": "https://devbog.com/contributing-to-open-source-beginners"
+      },
+      "blocks": [
+        {
+          "__component": "shared.rich-text",
+          "body": "## Why Contribute?\n\nContributing to open source is one of the best ways to grow as a developer. You'll:\n\n- **Learn from experienced developers** by reading their code\n- **Build your portfolio** with real-world projects\n- **Join a community** of like-minded developers\n- **Give back** to the tools you use every day"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Finding Your First Project\n\nLook for issues labeled `good first issue` or `help wanted` on GitHub. These are specifically marked for newcomers.\n\nStart with projects you already use. You understand the context and can make meaningful contributions faster.\n\n## Understanding the Codebase\n\nBefore writing any code:\n\n1. Read the `CONTRIBUTING.md` file\n2. Check the project's code style and conventions\n3. Run the test suite locally\n4. Join the project's community channel (Discord, Slack, etc.)"
+        },
+        {
+          "__component": "shared.quote",
+          "title": "Kent Beck",
+          "body": "Make it work, make it right, make it fast."
+        },
+        {
+          "__component": "shared.media",
+          "file": "we-love-pizza.jpg"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Making Your First PR\n\nKeep your first contribution small. Fix a typo in documentation, add a missing test, or resolve a simple bug. Small, focused PRs are more likely to be merged quickly.\n\n## Common Pitfalls\n\n- Don't submit huge PRs — break them into smaller pieces\n- Always run tests before submitting\n- Be responsive to review feedback\n- Don't take rejection personally — it's about the code, not you"
+        }
+      ]
+    },
+    {
+      "title": "This Shrimp Is Awesome: Nature's Perfect Predator",
       "slug": "this-shrimp-is-awesome",
-      "category": {
-        "id": 4
-      },
-      "author": {
-        "id": 1
-      },
-      "description": "Mantis shrimps, or stomatopods, are marine crustaceans of the order Stomatopoda.",
-      "cover": null,
+      "category": "News",
+      "author": "David Doe",
+      "description": "Mantis shrimps have the fastest punch in the animal kingdom.",
       "blocks": [
         {
           "__component": "shared.rich-text",
-          "body": "## Probant \n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. \n\n## Abit sua\n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. "
+          "body": "## The Mantis Shrimp\n\nMantis shrimps, or stomatopods, are marine crustaceans that pack an incredible punch. Their club-like appendages accelerate faster than a bullet, generating enough force to break through glass aquarium walls.\n\nThe strike is so fast that it creates cavitation bubbles in the water. When these bubbles collapse, they produce a flash of light and temperatures rivaling the surface of the sun."
         },
         {
           "__component": "shared.quote",
-          "title": "Thelonius Monk",
-          "body": "You've got to dig it to dig it, you dig?"
+          "title": "Marine Biology Fact",
+          "body": "The mantis shrimp can see 16 types of color receptors, compared to just 3 in humans."
         },
         {
           "__component": "shared.media",
-          "file": "coffee-art.jpg"
+          "file": "this-shrimp-is-awesome.jpg"
         },
         {
           "__component": "shared.rich-text",
-          "body": "## Spatiantia astra \n\nFoeda, medio silva *errandum*: onus formam munere. Mutata bibulis est auxiliare arces etiamnunc verbis virgineo Priamidas illa Thescelus, nam fit locis lucis auras. Exitus hospes gratulor ut pondere [speslimite](http://www.curas.io/figuram); quid habent, Avernales faciente de. Pervenit Ino sonabile supplex cognoscenti vires, Bacchumque errat miserarum venandi dignabere dedisti. Discrimina iuncosaque virgaque tot sine superest [fissus](http://quos.org/sitet.aspx). Non color esset potest non sumit, sed vix arserat. Nisi immo silva tantum pectusque quos pennis quisquam artus!"
+          "body": "## Engineering Inspiration\n\nScientists are studying the mantis shrimp's club structure to develop better impact-resistant materials. The club's helicoidal structure distributes force incredibly efficiently.\n\nNASA has even studied these structures for use in spacecraft shielding against micrometeorite impacts."
         },
         {
           "__component": "shared.slider",
@@ -133,109 +372,152 @@
       ]
     },
     {
-      "title": "A bug is becoming a meme on the internet",
+      "title": "A Bug Is Becoming a Meme on the Internet",
       "slug": "a-bug-is-becoming-a-meme-on-the-internet",
-      "category": {
-        "id": 2
-      },
-      "author": {
-        "id": 2
-      },
-      "description": "How a bug on MySQL is becoming a meme on the internet",
-      "cover": null,
+      "category": "Tech Culture",
+      "author": "Sarah Baker",
+      "description": "How a quirky MySQL bug became one of the most viral developer memes of the year.",
       "blocks": [
         {
           "__component": "shared.rich-text",
-          "body": "## Probant \n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. \n\n## Abit sua\n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. "
-        },
-        {
-          "__component": "shared.quote",
-          "title": "Thelonius Monk",
-          "body": "You've got to dig it to dig it, you dig?"
-        },
-        {
-          "__component": "shared.media",
-          "file": "coffee-art.jpg"
+          "body": "## The Bug That Broke the Internet\n\nIt started as a routine bug report: a MySQL query returning unexpected results under specific conditions. But when developer @codebug tweeted about it with a frustrated GIF, something unexpected happened.\n\nThe tweet went viral. Within hours, thousands of developers were sharing their own encounters with the same bug, each one more creative than the last."
         },
         {
           "__component": "shared.rich-text",
-          "body": "## Spatiantia astra \n\nFoeda, medio silva *errandum*: onus formam munere. Mutata bibulis est auxiliare arces etiamnunc verbis virgineo Priamidas illa Thescelus, nam fit locis lucis auras. Exitus hospes gratulor ut pondere [speslimite](http://www.curas.io/figuram); quid habent, Avernales faciente de. Pervenit Ino sonabile supplex cognoscenti vires, Bacchumque errat miserarum venandi dignabere dedisti. Discrimina iuncosaque virgaque tot sine superest [fissus](http://quos.org/sitet.aspx). Non color esset potest non sumit, sed vix arserat. Nisi immo silva tantum pectusque quos pennis quisquam artus!"
+          "body": "## The Meme Evolution\n\nThe meme evolved rapidly:\n\n- First came the classic \"it works on my machine\" variations\n- Then the \"this is fine\" dog sitting in a burning server room\n- Followed by elaborate copypasta about the existential dread of database bugs\n\nThe MySQL team even acknowledged the meme in their release notes, calling it \"the most entertaining bug report we've ever received.\""
         },
         {
-          "__component": "shared.slider",
-          "files": ["coffee-art.jpg", "coffee-beans.jpg"]
+          "__component": "shared.quote",
+          "title": "Anonymous Developer",
+          "body": "There are only two hard things in computer science: cache invalidation, naming things, and off-by-one errors."
+        },
+        {
+          "__component": "shared.media",
+          "file": "a-bug-is-becoming-a-meme-on-the-internet.jpg"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Why Developer Memes Matter\n\nDeveloper humor serves an important purpose. It builds community, makes frustrating experiences relatable, and provides comic relief during stressful debugging sessions.\n\nThe bug has since been fixed, but the meme lives on as a reminder that even in serious software engineering, there's always room for laughter."
         }
       ]
     },
     {
-      "title": "Beautiful picture",
-      "slug": "beautiful-picture",
-      "category": {
-        "id": 4
-      },
-      "author": {
-        "id": 2
-      },
-      "description": "Description of a beautiful picture",
-      "cover": null,
-      "blocks": [
-        {
-          "__component": "shared.rich-text",
-          "body": "## Probant \n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. \n\n## Abit sua\n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. "
-        },
-        {
-          "__component": "shared.quote",
-          "title": "Thelonius Monk",
-          "body": "You've got to dig it to dig it, you dig?"
-        },
-        {
-          "__component": "shared.media",
-          "file": "coffee-art.jpg"
-        },
-        {
-          "__component": "shared.rich-text",
-          "body": "## Spatiantia astra \n\nFoeda, medio silva *errandum*: onus formam munere. Mutata bibulis est auxiliare arces etiamnunc verbis virgineo Priamidas illa Thescelus, nam fit locis lucis auras. Exitus hospes gratulor ut pondere [speslimite](http://www.curas.io/figuram); quid habent, Avernales faciente de. Pervenit Ino sonabile supplex cognoscenti vires, Bacchumque errat miserarum venandi dignabere dedisti. Discrimina iuncosaque virgaque tot sine superest [fissus](http://quos.org/sitet.aspx). Non color esset potest non sumit, sed vix arserat. Nisi immo silva tantum pectusque quos pennis quisquam artus!"
-        },
-        {
-          "__component": "shared.slider",
-          "files": ["coffee-art.jpg", "coffee-beans.jpg"]
-        }
-      ]
-    },
-    {
-      "title": "What's inside a Black Hole",
+      "title": "What's Inside a Black Hole?",
       "slug": "what-s-inside-a-black-hole",
-      "category": {
-        "id": 1
+      "category": "News",
+      "author": "Jordan Chen",
+      "description": "Exploring the mysteries inside black holes.",
+      "seo": {
+        "metaTitle": "What's Inside a Black Hole? The Science Explained",
+        "metaDescription": "An accessible exploration of black hole physics, from the event horizon to the singularity. What does modern science tell us about these cosmic mysteries?",
+        "keywords": "black hole, physics, space, science, singularity",
+        "metaRobots": "index, follow",
+        "canonicalURL": "https://devbog.com/what-s-inside-a-black-hole"
       },
-      "author": {
-        "id": 2
-      },
-      "description": "Maybe the answer is in this article, or not...",
-      "cover": null,
       "blocks": [
         {
           "__component": "shared.rich-text",
-          "body": "## Probant \n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. \n\n## Abit sua\n\nse Lorem markdownum negat. Argo *saxa* videnda cornuaque hunc qui tanta spes teneas! Obliquis est dicenti est salutat ille tamen iuvenum nostrae dolore. - Colores nocituraque comitata eripiunt - Addit quodcunque solum cui et dextram illis - Nulli meus nec extemplo ille ferebat pressit Se blandita fulvae vox gravem Pittheus cesserunt sanguine herbis tu comitum tenuit. Sui in ruunt; Doridaque maculosae fuissem! Et loqui. "
-        },
-        {
-          "__component": "shared.quote",
-          "title": "Thelonius Monk",
-          "body": "You've got to dig it to dig it, you dig?"
-        },
-        {
-          "__component": "shared.media",
-          "file": "coffee-art.jpg"
+          "body": "## The Event Horizon\n\nThe event horizon is the point of no return — the boundary beyond which nothing, not even light, can escape a black hole's gravitational pull.\n\nBut what lies beyond this boundary? The answer depends on which physicist you ask."
         },
         {
           "__component": "shared.rich-text",
-          "body": "## Spatiantia astra \n\nFoeda, medio silva *errandum*: onus formam munere. Mutata bibulis est auxiliare arces etiamnunc verbis virgineo Priamidas illa Thescelus, nam fit locis lucis auras. Exitus hospes gratulor ut pondere [speslimite](http://www.curas.io/figuram); quid habent, Avernales faciente de. Pervenit Ino sonabile supplex cognoscenti vires, Bacchumque errat miserarum venandi dignabere dedisti. Discrimina iuncosaque virgaque tot sine superest [fissus](http://quos.org/sitet.aspx). Non color esset potest non sumit, sed vix arserat. Nisi immo silva tantum pectusque quos pennis quisquam artus!"
+          "body": "## The Singularity\n\nAccording to general relativity, all matter in a black hole is crushed into an infinitely dense point called a singularity. At this point, the laws of physics as we know them break down.\n\nBut quantum mechanics suggests something different might be happening."
+        },
+        {
+          "__component": "shared.quote",
+          "title": "Stephen Hawking",
+          "body": "Not only does God play dice, but he sometimes throws them where they cannot be seen."
+        },
+        {
+          "__component": "shared.media",
+          "file": "what-s-inside-a-black-hole.jpg"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## The Information Paradox\n\nOne of the biggest unsolved problems in physics is the black hole information paradox. If black holes destroy information, they violate a fundamental principle of quantum mechanics.\n\nHawking radiation suggests black holes slowly evaporate, but what happens to the information they consumed? This question remains one of the greatest puzzles in theoretical physics.\n\n## The Firewall Hypothesis\n\nSome physicists propose that instead of empty space, the event horizon is surrounded by a wall of high-energy particles — a \"firewall\" that would incinerate anything passing through."
+        }
+      ]
+    },
+    {
+      "title": "Beautiful Picture: The Art of Code",
+      "slug": "beautiful-picture",
+      "category": "Tech Culture",
+      "author": "Alex Rivera",
+      "description": "Generative art blurs the line between code and creativity.",
+      "blocks": [
+        {
+          "__component": "shared.rich-text",
+          "body": "## Code as Canvas\n\nGenerative art uses algorithms and code to create visual artwork that is both mathematically precise and aesthetically beautiful. Artists like Tyler Hobbs and Casey Reas have pioneered this intersection of technology and creativity.\n\nTools like Processing, p5.js, and Three.js have made creative coding accessible to anyone with a browser."
+        },
+        {
+          "__component": "shared.media",
+          "file": "beautiful-picture.jpg"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## The Creative Coding Process\n\nCreative coding is different from traditional software development. Instead of solving a specific problem, you're exploring a space of possibilities:\n\n1. **Define rules**: Set up mathematical or logical constraints\n2. **Add randomness**: Introduce controlled chaos for variety\n3. **Iterate**: Tweak parameters and observe the results\n4. **Curate**: Select the most interesting outputs"
+        },
+        {
+          "__component": "shared.quote",
+          "title": "Casey Reas",
+          "body": "Process is the essence of generative art. The code defines a set of rules, and the art emerges from the execution of those rules."
         },
         {
           "__component": "shared.slider",
-          "files": ["coffee-art.jpg", "coffee-beans.jpg"]
+          "files": ["beautiful-picture.jpg", "coffee-art.jpg"]
         }
       ]
+    },
+    {
+      "title": "CI/CD Pipeline Best Practices for 2025",
+      "slug": "ci-cd-pipeline-best-practices-2025",
+      "category": "DevOps",
+      "author": "Sarah Baker",
+      "description": "CI/CD strategies to ship faster with GitHub Actions.",
+      "seo": {
+        "metaTitle": "CI/CD Pipeline Best Practices for 2025",
+        "metaDescription": "Learn modern CI/CD best practices including parallel testing, caching, Docker layer optimization, and deployment strategies for 2025.",
+        "keywords": "ci/cd, github actions, docker, deployment, devops, 2025",
+        "metaRobots": "index, follow",
+        "canonicalURL": "https://devbog.com/ci-cd-pipeline-best-practices-2025"
+      },
+      "blocks": [
+        {
+          "__component": "shared.rich-text",
+          "body": "## The State of CI/CD in 2025\n\nContinuous integration and deployment have evolved dramatically. Modern pipelines are faster, more reliable, and more secure than ever. But many teams are still using outdated practices.\n\nHere's what you should be doing in 2025."
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Parallel Everything\n\nRun your tests, linters, and builds in parallel. Most CI platforms support this natively:\n\n- **Test splitting**: Distribute tests across multiple runners\n- **Matrix builds**: Test against multiple Node/Python versions simultaneously\n- **Concurrent jobs**: Run lint, typecheck, and tests at the same time"
+        },
+        {
+          "__component": "shared.quote",
+          "title": "DevOps Principle",
+          "body": "If it hurts, do it more often. Automate the painful parts of your deployment process."
+        },
+        {
+          "__component": "shared.media",
+          "file": "coffee-beans.jpg"
+        },
+        {
+          "__component": "shared.rich-text",
+          "body": "## Caching Strategies\n\nEffective caching can cut your build times in half:\n\n- **Dependency caching**: Cache `node_modules` or `pip` packages\n- **Docker layer caching**: Reuse unchanged layers in multi-stage builds\n- **Build artifact caching**: Cache compiled assets between runs\n\n## Deployment Strategies\n\nConsider blue-green deployments or canary releases to minimize downtime and risk. Feature flags let you decouple deployment from release."
+        }
+      ]
+    }
+  ],
+  "subscribers": [
+    {
+      "email": "testuser@example.com",
+      "confirmed": true
+    },
+    {
+      "email": "newsletter@devbog.com",
+      "confirmed": true
+    },
+    {
+      "email": "unconfirmed@example.com",
+      "confirmed": false
     }
   ]
 }

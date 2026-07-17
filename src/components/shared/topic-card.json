@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_shared_topic_cards",
+  "info": {
+    "displayName": "Topic Card",
+    "icon": "layer-group",
+    "description": "A topic card with icon, title, and description"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "icon": {
+      "type": "enumeration",
+      "enum": ["cpu-chip", "code-bracket", "command-line", "cloud", "book-open", "globe", "shield-check", "rocket"],
+      "required": true
+    }
+  }
+}

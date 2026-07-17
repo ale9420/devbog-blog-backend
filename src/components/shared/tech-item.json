@@ -1,0 +1,15 @@
+{
+  "collectionName": "components_shared_tech_items",
+  "info": {
+    "displayName": "Tech Item",
+    "icon": "tag",
+    "description": "A single technology name"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "collectionName": "components_shared_social_links",
+  "info": {
+    "displayName": "Social Links",
+    "icon": "share",
+    "description": "Section with social media links"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "linkedin": {
+      "type": "string"
+    },
+    "github": {
+      "type": "string"
+    },
+    "codeberg": {
+      "type": "string"
+    },
+    "mastodon": {
+      "type": "string"
+    },
+    "twitter": {
+      "type": "string"
+    }
+  }
+}

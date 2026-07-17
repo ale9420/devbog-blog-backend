@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_shared_tech_stacks",
+  "info": {
+    "displayName": "Tech Stack",
+    "icon": "stack",
+    "description": "Section displaying a list of technologies"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "technologies": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.tech-item"
+    }
+  }
+}
