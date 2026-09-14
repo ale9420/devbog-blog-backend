@@ -31,6 +31,9 @@ RUN mkdir -p /app/.tmp
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist/config ./config
 COPY --from=build /app/dist/src ./src
+# Local plugins are excluded from the server tsc compile (tsconfig excludes
+# src/plugins/**) and ship their own esbuild dist, so copy them as-is.
+COPY --from=build /app/src/plugins ./src/plugins
 COPY --from=build /app/dist/build ./build
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/database ./database

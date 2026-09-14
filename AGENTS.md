@@ -203,6 +203,12 @@ The `scripts/seed.js` file demonstrates:
 
 ---
 
+## Fediverse Federation
+
+The plan for connecting this backend to the fediverse (ActivityPub/Mastodon) lives in `docs/FEDIVERSE.md`. Implementation is tracked via the `fediverse-federation` GitHub milestone (one issue per phase, 0–5). Read that document before touching `src/plugins/fediverse/`, the comments schema extension in `src/extensions/comments/`, or any fediverse-related env vars.
+
+---
+
 ## OpenCode Skills
 
 Project-specific agent skills live in `.opencode/skills/`. They are loaded automatically and cover the most common tasks for this headless CMS backend.
@@ -229,4 +235,4 @@ Each skill file is at `.opencode/skills/<name>/SKILL.md`.
 4. **Neon Tech PostgreSQL** used for production database
 5. **Comments plugin** (`strapi-plugin-comments`) enabled for articles
 6. **GitHub Actions workflows** in `.github/workflows/` run CI on PRs/pushes and deploy on `main`
-7. **OpenCode MCP servers** configured in `.opencode/opencode.json` (GitHub + Playwright), disabled by default
+7. **OpenCode MCP servers** configured in `.opencode/opencode.json`: GitHub + Playwright are disabled by default; the Strapi server (`https://api.bogdev.com.co/mcp`) is enabled and authenticates with a Strapi **Admin API token** read from `~/.config/opencode/secrets/strapi-mcp-admin-token` (content API tokens from Settings → API Tokens are rejected by `/mcp` with 401)
