@@ -35,6 +35,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
       };
 
   return {
+    fediverse: {
+      enabled: env.bool('FEDIVERSE_ENABLED', false),
+      resolve: './src/plugins/fediverse',
+    },
     upload: {
       config: uploadConfig,
     },
