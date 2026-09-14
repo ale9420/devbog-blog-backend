@@ -15,11 +15,11 @@
     "title": {
       "type": "string",
       "required": true,
-      "maxLength": 60
+      "maxLength": 70
     },
     "description": {
       "type": "string",
-      "maxLength": 65,
+      "maxLength": 200,
       "required": true
     },
     "image": {
