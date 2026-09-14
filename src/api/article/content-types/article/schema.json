@@ -31,7 +31,7 @@
           "localized": true
         }
       },
-      "maxLength": 80
+      "maxLength": 160
     },
     "slug": {
       "type": "uid",
