@@ -70,6 +70,16 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
     expect(body.summary).toBe('A blog about testing federation.');
   });
 
+  it('builds actor URLs with the public scheme when behind a TLS-terminating proxy', async () => {
+    const res = await fetch(actorUrl, {
+      headers: { accept: ACTIVITY_JSON, 'x-forwarded-proto': 'https' },
+    });
+    const body = await res.json();
+
+    expect(body.id).toBe(`https://${host}/fediverse/user/devbog`);
+    expect(body.inbox).toBe(`https://${host}/fediverse/user/devbog/inbox`);
+  });
+
   it('persists the actor key pair instead of regenerating it on every request', async () => {
     const keysService = strapi.plugin('fediverse').service('keys');
     const stored = await keysService.getStoredKeyPairEntries(strapi);

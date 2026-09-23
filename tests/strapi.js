@@ -4,7 +4,13 @@ const fs = require('fs');
 const path = require('path');
 const { createStrapi, compileStrapi } = require('@strapi/strapi');
 
-const TEST_DB_PATH = path.join(process.cwd(), '.tmp', 'test.db');
+// One SQLite file per Jest worker: suites run in parallel workers and each one
+// deletes/recreates its database, so a shared file makes them clobber each other.
+const TEST_DB_PATH = path.join(
+  process.cwd(),
+  '.tmp',
+  `test-${process.env.JEST_WORKER_ID || '1'}.db`
+);
 
 function setupEnvironment() {
   process.env.NODE_ENV = 'test';
