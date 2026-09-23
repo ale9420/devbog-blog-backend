@@ -274,11 +274,12 @@ Two volumes are required for proper operation:
 
 Required secrets in GitHub repository (Settings → Secrets → Actions):
 
-| Secret                   | Description              | Where to Find                        |
-| ------------------------ | ------------------------ | ------------------------------------ |
-| `DOKPLOY_SERVER_URL`     | Dokploy panel URL        | `https://dokploy.bogdev.com.co`      |
-| `DOKPLOY_API_KEY`        | API authentication token | Dokploy → Profile → API Keys         |
-| `DOKPLOY_APPLICATION_ID` | Application identifier   | Dokploy → App → General tab (in URL) |
+| Secret                           | Description                         | Where to Find                                                                                 |
+| -------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------- |
+| `DOKPLOY_SERVER_URL`             | Dokploy panel URL                   | `https://dokploy.bogdev.com.co`                                                               |
+| `DOKPLOY_API_KEY`                | API authentication token            | Dokploy → Profile → API Keys                                                                  |
+| `DOKPLOY_APPLICATION_ID`         | Application identifier (production) | Dokploy → App → General tab (in URL)                                                          |
+| `DOKPLOY_STAGING_APPLICATION_ID` | Application identifier (staging)    | Dokploy → staging app → General tab (in URL); see [Staging Environment](#staging-environment) |
 
 ---
 
@@ -478,21 +479,53 @@ curl http://localhost:1337/_health
 
 **Note:** Environment variables are not version-controlled. Document required variables in this file.
 
-### Changing the Deployment Trigger
+### Staging Environment
 
-**Current behavior:** Deploys on every push to `main`.
+Pushes to `develop` build and deploy to a separate staging app, so branches
+can be verified against a real public domain before merging to `main`. This
+was added specifically to let fediverse work be verified against a live
+Mastodon account (see `docs/FEDIVERSE.md`) without touching production.
 
-**To add staging environment:**
+**Trigger** (`.github/workflows/deploy.yml`):
 
 ```yaml
 on:
   push:
-    branches:
-      - main # production
-      - develop # staging
+    branches: ['main', 'develop']
 ```
 
-Then use different `DOKPLOY_APPLICATION_ID` secrets based on branch.
+**Image tag:** the `build-and-push` job tags `develop` builds `:staging`
+(only `main` gets `:latest`) via a `type=raw,value=staging,enable=...`
+metadata rule, so the two environments never race for the same tag.
+
+**Routing to the right Dokploy app:** the `deploy` job picks the
+`applicationId` based on `github.ref` — `main` uses `DOKPLOY_APPLICATION_ID`
+(production, unchanged), anything else uses `DOKPLOY_STAGING_APPLICATION_ID`.
+If the staging secret isn't set yet, the Dokploy API call fails loudly
+instead of silently deploying to production.
+
+**Staging Dokploy app** (manual setup, one-time):
+
+| Setting              | Value                                                                |
+| -------------------- | -------------------------------------------------------------------- |
+| Docker Image         | `ghcr.io/<org>/devbog-blog-backend:staging` (not `:latest`)          |
+| Domain               | `staging-api.bogdev.com.co` (needs its own DNS A/CNAME → VPS IP)     |
+| Container Port       | `1337`                                                               |
+| Database             | `DATABASE_CLIENT=sqlite` — no separate Postgres instance for staging |
+| Volume (SQLite data) | `../files/strapi-staging-tmp` → `/app/.tmp`                          |
+| Volume (uploads)     | `../files/strapi-staging-uploads` → `/app/public/uploads`            |
+
+Use the **same** health check and update config JSON as production (see
+[Dokploy Configuration](#dokploy-configuration)). Generate **fresh** security
+keys for staging (`node scripts/generate-keys.js`) — never reuse production's
+`APP_KEYS`/secrets. Set `URL=https://staging-api.bogdev.com.co`, and for
+fediverse verification: `FEDIVERSE_ENABLED=true` (see `docs/FEDIVERSE.md` for
+the rest of the `FEDIVERSE_*` variables).
+
+**Required GitHub secret:** `DOKPLOY_STAGING_APPLICATION_ID` (Settings →
+Secrets → Actions), the staging app's id from its Dokploy URL — in addition
+to the existing `DOKPLOY_SERVER_URL`/`DOKPLOY_API_KEY`, which are shared
+across both environments.
 
 ### Disabling Auto-Deploy
 
