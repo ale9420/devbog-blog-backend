@@ -2,7 +2,7 @@
 
 This document is the source of truth for connecting the DevBog blog backend to the fediverse, so users on Mastodon (and any other ActivityPub network) can follow the blog, receive published articles in their timeline, and reply, like, and boost — with replies landing as moderated comments in the existing `strapi-plugin-comments` collection.
 
-> **Status: Phase 0 (spike) complete; Phase 1 (blog actor, keypairs, followers) code-complete and test-covered, pending a real live-Mastodon follow before checking it off** — see Phase 1 progress notes below. Branch `feat/fediverse-phase-0`. Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
+> **Status: Phases 0 and 1 complete** (Phase 1 verified live: a real Mastodon account followed the staging actor). Next up: Phase 2 (article federation). Branch `develop` (staging deploys from it). Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
 
 ## Table of Contents
 
@@ -242,15 +242,18 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **Jest:** `@fedify/fedify` requires `structured-field-values`, an ESM-only `.js` package. Node ≥22 `require()`s it fine (dev/prod), but Jest cannot — `jest.config.js` now uses an esbuild transformer (`tests/helpers/esbuild-transformer.js`) with `transformIgnorePatterns` allowlisting that package.
 - **Spike scope:** keypairs are in-memory (regenerated per boot — fine for the spike); Phase 1 persists them in the plugin store. `tests/fediverse.test.js` covers webfinger, actor document, content negotiation, unknown actor, unsigned inbox rejection, `/_health` isolation, and publish/unpublish event delivery.
 
-### Phase 1 — Blog actor, keypairs, followers `[~]` (#4)
+### Phase 1 — Blog actor, keypairs, followers `[x]` (#4)
 
-- [ ] Actor dispatcher (profile from `global`/`about`), keypair generation + plugin-store persistence
-- [ ] `fediverse-follower` content type; `Follow` → record + signed `Accept`; `Undo(Follow)`/`Block` → remove; `blocked` flag
-- [ ] Followers collection + NodeInfo
-- [ ] Actor opts into Mastodon's directory (`toot:discoverable: true`) — see [Discoverability on Other Networks](#discoverability-on-other-networks)
-- [ ] Verify: search `@devbog@api.bogdev.com.co` from a Mastodon account and follow successfully
+- [x] Actor dispatcher (profile from `global`/`about`), keypair generation + plugin-store persistence
+- [x] `fediverse-follower` content type; `Follow` → record + signed `Accept`; `Undo(Follow)`/`Block` → remove; `blocked` flag
+- [x] Followers collection + NodeInfo
+- [x] Actor opts into Mastodon's directory (`toot:discoverable: true`) — see [Discoverability on Other Networks](#discoverability-on-other-networks)
+- [x] Verify: search `@devbog@api.bogdev.com.co` from a Mastodon account and follow successfully
 
-**Phase 1 progress (as of 2026-09-22):** the actor dispatcher, RSA keypair generation + JWK persistence in the plugin store, the `fediverse-follower` content type, the followers dispatcher/counter, and the `Follow`/`Undo`/`Block` inbox listeners (with signed `Accept`) are implemented in `federation.ts` and `services/{keys,actor-profile,followers}.ts`. `tests/fediverse-phase1.test.js` now covers this scope end-to-end, including a fully HTTP-signed `Follow` → `Accept` round trip against a fake remote actor server (`tests/helpers/remote-actor.js`, using Fedify's own `signRequest`/`Person`/`CryptographicKey`) — not just unsigned-request rejection. Still open before checking this phase off: `toot:discoverable`, and a real follow verified from a live Mastodon account (automated signature verification proves the protocol mechanics; it doesn't substitute for one real interop check against Mastodon's actual implementation).
+**Phase 1 findings (verified 2026-09-23 against a live Mastodon account on `staging-api.bogdev.com.co`):** the actor dispatcher (now `discoverable: true`), RSA keypair generation + JWK persistence in the plugin store, the `fediverse-follower` content type, the followers dispatcher/counter, NodeInfo, and the `Follow`/`Undo`/`Block` inbox listeners (with signed `Accept`) live in `federation.ts` and `services/{keys,actor-profile,followers}.ts`. `tests/fediverse-phase1.test.js` covers them end-to-end, including a fully HTTP-signed `Follow` → `Accept` round trip against a fake remote actor (`tests/helpers/remote-actor.js`).
+
+- **Behind Traefik, Koa must trust the proxy.** Strapi 5 reads `server.proxy.koa`; the old `proxy: true` (Strapi 4 syntax) left `ctx.protocol` as `http`, and `@fedify/koa` builds request URLs from it, so every ActivityPub id came out as `http://`. `config/server.ts` now sets `proxy: { koa: true }` (regression test included). Any new federated URL must be checked over HTTPS on staging, not only locally.
+- **Staging** is the live test bed: `develop` → `:staging` image / Dokploy app on `staging-api.bogdev.com.co` (see `docs/CI_CD.md`). It needs `URL`, `FEDIVERSE_ENABLED=true` and `DATABASE_CLIENT=sqlite`; the app builds via Nixpacks (`npm start`), so `public/uploads` is created by the `prestart` script.
 
 ### Phase 2 — Article federation `[ ]` (#5)
 

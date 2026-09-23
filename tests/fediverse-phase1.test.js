@@ -80,6 +80,13 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
     expect(body.inbox).toBe(`https://${host}/fediverse/user/devbog/inbox`);
   });
 
+  it('opts the actor into Mastodon directory discovery', async () => {
+    const res = await fetch(actorUrl, { headers: { accept: ACTIVITY_JSON } });
+    const body = await res.json();
+
+    expect(body.discoverable).toBe(true);
+  });
+
   it('persists the actor key pair instead of regenerating it on every request', async () => {
     const keysService = strapi.plugin('fediverse').service('keys');
     const stored = await keysService.getStoredKeyPairEntries(strapi);
