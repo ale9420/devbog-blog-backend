@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "strapi": {
+      "type": "http",
+      "url": "https://api.bogdev.com.co/mcp",
+      "headersHelper": ".claude/scripts/secret-header.sh strapi-mcp-admin-token"
+    },
+    "dokploy": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "DOKPLOY_API_KEY=\"$(cat \"$HOME/.claude/secrets/dokploy-api-key\")\" exec npx -y @dokploy/mcp"
+      ],
+      "env": {
+        "DOKPLOY_URL": "https://dokploy.bogdev.com.co",
+        "DOKPLOY_TOOL_PRESET": "minimal"
+      }
+    }
+  }
+}

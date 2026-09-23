@@ -2,7 +2,7 @@
 
 This document is the source of truth for connecting the BogDev blog backend to the fediverse, so users on Mastodon (and any other ActivityPub network) can follow the blog, receive published articles in their timeline, and reply, like, and boost — with replies landing as moderated comments in the existing `strapi-plugin-comments` collection.
 
-> **Status: Phases 0–3 complete and verified live on staging. Phase 4 (likes and boosts) is implemented and test-covered, pending a live check from Mastodon.** Branch `develop` (staging deploys from it). Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
+> **Status: Phases 0–4 complete and verified live on staging** (follow, articles, moderated replies, likes and boosts). Next up: Phase 5 (tests review, project skill, deployment notes, production enablement). Branch `develop` (staging deploys from it). Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
 
 ## Table of Contents
 
@@ -298,12 +298,12 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **Sanitization order:** tags are stripped first (keeping `<br>`/paragraph breaks), entities decoded after, so an encoded `&lt;script&gt;` ends up as literal text, never markup. The frontend renders comments as text (no `v-html`). Mastodon's leading `@devbog` mention is stripped; content is capped at 5000 characters.
 - **Authorship is checked.** A `Note` whose `attributedTo` differs from the signature-verified activity actor is dropped, and edits/deletes are only honoured from the original author.
 
-### Phase 4 — Likes & boosts `[~]` (#7)
+### Phase 4 — Likes & boosts `[x]` (#7)
 
 - [x] `plugin::fediverse.interaction` content type; `Like`/`Announce` + `Undo` handlers
 - [x] `GET /api/fediverse/articles/:documentId/stats` public route (`auth: false`, aggregates only)
 - [x] Hardening found on the way: `Undo` now requires the embedded activity's actor to match the signature-verified sender
-- [ ] Verify live: a like and a boost from Mastodon move the counts; undoing them decrements
+- [x] Verify live (2026-09-23, staging): a like and a boost from Mastodon move the counts; undoing them decrements
 
 **Phase 4 findings:**
 
@@ -318,7 +318,7 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - [ ] Supertest coverage: webfinger, actor, stats routes; reply→comment mapping unit tests (existing Jest + isolated SQLite harness)
 - [ ] Cross-server verification against at least one non-Mastodon implementation (Pleroma/Akkoma, Misskey, or GoToSocial), not only Mastodon/activitypub.academy — see [Discoverability on Other Networks](#discoverability-on-other-networks)
 - [ ] `npm run lint`, `npm run typecheck`, `npm run test` green
-- [ ] Update this document's status markers; add `.opencode/skills/strapi-fediverse/SKILL.md`
+- [ ] Update this document's status markers; add `.claude/skills/strapi-fediverse/SKILL.md`
 - [ ] Deployment notes: env vars (`FEDIVERSE_ENABLED`, `FRONTEND_URL`, ...) in `docs/CI_CD.md`/Dokploy config — no proxy changes required
 
 ---
