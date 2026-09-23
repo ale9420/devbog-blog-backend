@@ -1,0 +1,250 @@
+'use strict';
+
+// Enable the fediverse plugin before Strapi boots (config/plugins.ts reads it).
+process.env.FEDIVERSE_ENABLED = 'true';
+process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog';
+process.env.FRONTEND_URL = 'https://blog.example.test';
+process.env.FRONTEND_ARTICLE_PATH = '/blog/{slug}';
+
+const { setupStrapi, cleanupStrapi } = require('./strapi');
+const { createRemoteActor } = require('./helpers/remote-actor');
+const { waitUntil } = require('./helpers/wait-until');
+
+const ACTIVITY_JSON = 'application/activity+json';
+const ARTICLE_UID = 'api::article.article';
+
+const asArray = (value) => (Array.isArray(value) ? value : value == null ? [] : [value]);
+const isPublic = (value) => asArray(value).some((v) => /Public$/.test(v));
+
+describe('Fediverse federation (Phase 2: article federation)', () => {
+  let host;
+  let actorUrl;
+  let followersService;
+  let remote;
+  const createdDocumentIds = [];
+
+  const uniqueTitle = (label) => `${label} ${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+
+  // Strapi only autogenerates the uid `slug` from the admin UI, not through the
+  // document service, so tests supply it explicitly.
+  const slugify = (title) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+  async function createArticle(data = {}) {
+    const title = data.title ?? uniqueTitle('Federated article');
+    const draft = await strapi.documents(ARTICLE_UID).create({
+      data: { title, slug: slugify(title), description: 'A short excerpt.', ...data },
+    });
+    createdDocumentIds.push(draft.documentId);
+    return draft;
+  }
+
+  async function publish(documentId, locale) {
+    return strapi.documents(ARTICLE_UID).publish({ documentId, ...(locale ? { locale } : {}) });
+  }
+
+  async function getJson(path, headers = {}) {
+    const res = await fetch(`http://${host}${path}`, {
+      headers: { accept: ACTIVITY_JSON, ...headers },
+    });
+    return { status: res.status, body: res.ok ? await res.json() : null };
+  }
+
+  const deliveriesOf = (type) => remote.inboxDeliveries.filter((a) => a.type === type);
+  const settle = (ms = 400) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  beforeAll(async () => {
+    await setupStrapi();
+
+    const port = strapi.server.httpServer.address().port;
+    host = `127.0.0.1:${port}`;
+    actorUrl = `http://${host}/fediverse/user/devbog`;
+    followersService = strapi.plugin('fediverse').service('followers');
+  });
+
+  beforeEach(async () => {
+    remote = await createRemoteActor({ preferredUsername: 'reader' });
+    await followersService.recordFollower(strapi, {
+      actorId: remote.actorUrl,
+      inbox: remote.inboxUrl,
+    });
+  });
+
+  afterEach(async () => {
+    await remote.close();
+    const rows = await strapi.db.query('plugin::fediverse.follower').findMany();
+    for (const row of rows) {
+      await strapi.db
+        .query('plugin::fediverse.follower')
+        .delete({ where: { documentId: row.documentId } });
+    }
+  });
+
+  afterAll(async () => {
+    // Let in-flight fan-out (which runs after the document operation commits)
+    // finish before the harness tears the database down.
+    await settle(500);
+    await cleanupStrapi();
+  });
+
+  describe('Article object dispatcher', () => {
+    it('serves a published article as an ActivityPub Article with a frontend url', async () => {
+      const draft = await createArticle({ description: 'Why <federation> & friends matter.' });
+      await publish(draft.documentId);
+
+      const { status, body } = await getJson(`/fediverse/articles/${draft.documentId}`);
+
+      expect(status).toBe(200);
+      expect(body.type).toBe('Article');
+      expect(body.id).toBe(`http://${host}/fediverse/articles/${draft.documentId}`);
+      expect(body.name).toBe(draft.title);
+      expect(body.url).toBe(`https://blog.example.test/blog/${draft.slug}`);
+      expect(body.attributedTo).toBe(actorUrl);
+      expect(isPublic(body.to)).toBe(true);
+      // Untrusted-looking text in the excerpt must be escaped, not injected as markup.
+      expect(body.content).toContain('Why &lt;federation&gt; &amp; friends matter.');
+      expect(body.content).toContain(`https://blog.example.test/blog/${draft.slug}`);
+      expect(body.published).toBeTruthy();
+    });
+
+    it('returns 404 for a draft-only article and for unknown ids', async () => {
+      const draft = await createArticle();
+
+      expect((await getJson(`/fediverse/articles/${draft.documentId}`)).status).toBe(404);
+      expect((await getJson('/fediverse/articles/does-not-exist')).status).toBe(404);
+    });
+  });
+
+  describe('Outbox dispatcher', () => {
+    it('lists published articles as publicly-addressed Create activities, newest first', async () => {
+      const older = await createArticle();
+      await publish(older.documentId);
+      await settle(50);
+      const newer = await createArticle();
+      await publish(newer.documentId);
+      const draftOnly = await createArticle();
+
+      const root = await getJson('/fediverse/user/devbog/outbox');
+      expect(root.status).toBe(200);
+      expect(root.body.type).toBe('OrderedCollection');
+      expect(root.body.totalItems).toBeGreaterThanOrEqual(2);
+
+      const page = await getJson('/fediverse/user/devbog/outbox?cursor=0');
+      expect(page.status).toBe(200);
+      const items = asArray(page.body.orderedItems);
+      const ids = items.map((item) => item.object.id.split('/').pop());
+
+      expect(ids).toContain(older.documentId);
+      expect(ids).toContain(newer.documentId);
+      expect(ids).not.toContain(draftOnly.documentId);
+      expect(ids.indexOf(newer.documentId)).toBeLessThan(ids.indexOf(older.documentId));
+      for (const item of items) {
+        expect(item.type).toBe('Create');
+        expect(isPublic(item.to)).toBe(true);
+      }
+    });
+  });
+
+  describe('publish fan-out', () => {
+    it('sends a publicly-addressed Create(Article) to followers on publish', async () => {
+      const draft = await createArticle();
+      await publish(draft.documentId);
+
+      const create = await waitUntil(() =>
+        deliveriesOf('Create').find((a) => a.object?.id?.endsWith(draft.documentId))
+      );
+
+      expect(create.actor).toMatch(/\/fediverse\/user\/devbog$/);
+      expect(create.object.type).toBe('Article');
+      expect(create.object.name).toBe(draft.title);
+      expect(isPublic(create.to)).toBe(true);
+      expect(asArray(create.cc).some((c) => c.endsWith('/fediverse/user/devbog/followers'))).toBe(
+        true
+      );
+    });
+
+    it('sends Update(Article) when a federated article is edited and re-published', async () => {
+      const draft = await createArticle();
+      await publish(draft.documentId);
+      await waitUntil(() =>
+        deliveriesOf('Create').find((a) => a.object?.id?.endsWith(draft.documentId))
+      );
+
+      const newTitle = uniqueTitle('Edited title');
+      await strapi
+        .documents(ARTICLE_UID)
+        .update({ documentId: draft.documentId, data: { title: newTitle } });
+      await publish(draft.documentId);
+
+      const update = await waitUntil(() =>
+        deliveriesOf('Update').find((a) => a.object?.id?.endsWith(draft.documentId))
+      );
+      expect(update.object.name).toBe(newTitle);
+      expect(
+        deliveriesOf('Create').filter((a) => a.object?.id?.endsWith(draft.documentId))
+      ).toHaveLength(1);
+    });
+
+    it('sends Delete on unpublish, and nothing for articles that were never federated', async () => {
+      const draft = await createArticle();
+      await publish(draft.documentId);
+      await waitUntil(() =>
+        deliveriesOf('Create').find((a) => a.object?.id?.endsWith(draft.documentId))
+      );
+
+      await strapi.documents(ARTICLE_UID).unpublish({ documentId: draft.documentId });
+
+      const del = await waitUntil(() =>
+        deliveriesOf('Delete').find((a) => JSON.stringify(a.object).includes(draft.documentId))
+      );
+      expect(isPublic(del.to)).toBe(true);
+      expect((await getJson(`/fediverse/articles/${draft.documentId}`)).status).toBe(404);
+
+      const neverFederated = await createArticle();
+      await strapi.documents(ARTICLE_UID).delete({ documentId: neverFederated.documentId });
+      await settle();
+      expect(
+        deliveriesOf('Delete').some((a) =>
+          JSON.stringify(a.object).includes(neverFederated.documentId)
+        )
+      ).toBe(false);
+    });
+
+    it('does not deliver to blocked followers', async () => {
+      const row = await strapi.db
+        .query('plugin::fediverse.follower')
+        .findOne({ where: { actorId: remote.actorUrl } });
+      await strapi.db
+        .query('plugin::fediverse.follower')
+        .update({ where: { documentId: row.documentId }, data: { blocked: true } });
+
+      const draft = await createArticle();
+      await publish(draft.documentId);
+      await settle(800);
+
+      expect(remote.inboxDeliveries).toHaveLength(0);
+    });
+
+    it('only federates the default locale', async () => {
+      const localesService = strapi.plugin('i18n').service('locales');
+      const existing = await localesService.findByCode('es');
+      if (!existing) {
+        await localesService.create({ code: 'es', name: 'Spanish (es)' });
+      }
+
+      const draft = await createArticle();
+      await strapi.documents(ARTICLE_UID).update({
+        documentId: draft.documentId,
+        locale: 'es',
+        data: {
+          title: uniqueTitle('Artículo en español'),
+          slug: slugify(uniqueTitle('articulo-es')),
+          description: 'Resumen.',
+        },
+      });
+      await publish(draft.documentId, 'es');
+      await settle(800);
+
+      expect(remote.inboxDeliveries).toHaveLength(0);
+    });
+  });
+});

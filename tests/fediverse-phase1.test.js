@@ -6,20 +6,9 @@ process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER 
 
 const { setupStrapi, cleanupStrapi } = require('./strapi');
 const { createRemoteActor } = require('./helpers/remote-actor');
+const { waitUntil } = require('./helpers/wait-until');
 
 const ACTIVITY_JSON = 'application/activity+json';
-
-async function waitUntil(predicate, { timeoutMs = 5000, intervalMs = 25 } = {}) {
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    const value = await predicate();
-    if (value) return value;
-    if (Date.now() > deadline) {
-      throw new Error('Timed out waiting for condition');
-    }
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-}
 
 async function clearFollowers() {
   const rows = await strapi.db.query('plugin::fediverse.follower').findMany();

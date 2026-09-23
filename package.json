@@ -33,6 +33,7 @@
   "dependencies": {
     "@fedify/fedify": "2.3.6",
     "@fedify/koa": "2.3.6",
+    "@js-temporal/polyfill": "^0.5.1",
     "@notum-cz/strapi-plugin-seo": "^2.0.12",
     "@strapi/i18n": "^5.50.0",
     "@strapi/plugin-users-permissions": "^5.50.0",

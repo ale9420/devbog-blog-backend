@@ -6,6 +6,10 @@ import actorProfile from './services/actor-profile';
 import followers from './services/followers';
 import keys from './services/keys';
 import lifecycle, { subscribe, unsubscribe } from './services/lifecycle';
+import {
+  subscribe as subscribePublisher,
+  unsubscribe as unsubscribePublisher,
+} from './services/publisher';
 
 const plugin = {
   register({ strapi }: { strapi: Core.Strapi }) {
@@ -19,10 +23,12 @@ const plugin = {
 
   bootstrap({ strapi }: { strapi: Core.Strapi }) {
     subscribe(strapi);
+    subscribePublisher(strapi);
   },
 
   destroy() {
     unsubscribe();
+    unsubscribePublisher();
   },
 
   contentTypes: {

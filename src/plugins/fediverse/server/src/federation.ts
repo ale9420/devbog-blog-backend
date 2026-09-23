@@ -1,11 +1,17 @@
 import type { Core } from '@strapi/strapi';
 
 import { createFederation, MemoryKvStore, type Federation } from '@fedify/fedify';
-import { Accept, Block, Follow, Image, Link, Person, Undo } from '@fedify/fedify/vocab';
+import { Accept, Article, Block, Follow, Image, Link, Person, Undo } from '@fedify/fedify/vocab';
 import { getActorHandle, type Actor, type DocumentLoader } from '@fedify/fedify/vocab';
 import { createMiddleware } from '@fedify/koa';
 
 import pkg from '../../package.json';
+import {
+  buildArticle,
+  buildArticleActivity,
+  findPublishedArticle,
+  listPublishedArticles,
+} from './services/articles';
 import { getActorKeyPairs } from './services/keys';
 import {
   countFollowers,
@@ -25,6 +31,10 @@ export const INBOX_PATH = '/fediverse/user/{identifier}/inbox';
 export const SHARED_INBOX_PATH = '/fediverse/inbox';
 export const FOLLOWERS_PATH = '/fediverse/user/{identifier}/followers';
 export const NODEINFO_PATH = '/nodeinfo/2.1';
+export const OUTBOX_PATH = '/fediverse/user/{identifier}/outbox';
+export const ARTICLE_PATH = '/fediverse/articles/{documentId}';
+
+const OUTBOX_PAGE_SIZE = 20;
 
 function pluginService<T>(strapi: Core.Strapi, name: string): T {
   return strapi.plugin('fediverse').service(name) as T;
@@ -120,6 +130,34 @@ export function createFediverseFederation(): Federation<FediverseContextData> {
       if (identifier !== ACTOR_IDENTIFIER) return null;
       return await countFollowers(ctx.data.strapi);
     });
+
+  federation.setObjectDispatcher(Article, ARTICLE_PATH, async (ctx, values) => {
+    const record = await findPublishedArticle(ctx.data.strapi, values.documentId);
+    if (record == null) return null;
+    return buildArticle(ctx, ACTOR_IDENTIFIER, record);
+  });
+
+  federation
+    .setOutboxDispatcher(OUTBOX_PATH, async (ctx, identifier, cursor) => {
+      if (identifier !== ACTOR_IDENTIFIER) return null;
+
+      const start = Math.max(0, Number.parseInt(cursor ?? '0', 10) || 0);
+      const { items, total } = await listPublishedArticles(ctx.data.strapi, {
+        start,
+        limit: OUTBOX_PAGE_SIZE,
+      });
+      const next = start + OUTBOX_PAGE_SIZE;
+      return {
+        items: items.map((record) => buildArticleActivity('create', ctx, identifier, record)),
+        nextCursor: next < total ? String(next) : null,
+      };
+    })
+    .setCounter(async (ctx, identifier) => {
+      if (identifier !== ACTOR_IDENTIFIER) return null;
+      const { total } = await listPublishedArticles(ctx.data.strapi, { start: 0, limit: 1 });
+      return total;
+    })
+    .setFirstCursor(async () => '0');
 
   federation.setNodeInfoDispatcher(NODEINFO_PATH, async (ctx) => {
     const strapi = ctx.data.strapi;
@@ -250,7 +288,18 @@ export function createFediverseFederation(): Federation<FediverseContextData> {
   return federation;
 }
 
+const federations = new WeakMap<Core.Strapi, Federation<FediverseContextData>>();
+
+/** One Federation per Strapi instance, shared by the middleware and the article publisher. */
+export function getFederation(strapi: Core.Strapi): Federation<FediverseContextData> {
+  let federation = federations.get(strapi);
+  if (federation == null) {
+    federation = createFediverseFederation();
+    federations.set(strapi, federation);
+  }
+  return federation;
+}
+
 export function mountFediverseMiddleware(strapi: Core.Strapi) {
-  const federation = createFediverseFederation();
-  return createMiddleware(federation, () => ({ strapi }));
+  return createMiddleware(getFederation(strapi), () => ({ strapi }));
 }
