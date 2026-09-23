@@ -25,8 +25,9 @@ ENV DATABASE_CLIENT=postgres
 # Install curl for health checks
 RUN apk add --no-cache curl
 
-# Create required directories
-RUN mkdir -p /app/.tmp
+# Create required directories (Strapi's local upload provider refuses to start
+# if /app/public/uploads is missing, and .dockerignore excludes it from COPY)
+RUN mkdir -p /app/.tmp /app/public/uploads
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist/config ./config

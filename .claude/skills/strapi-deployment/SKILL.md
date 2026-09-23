@@ -12,16 +12,23 @@ This project is deployed as a Docker container managed by **Dokploy** on a Hetzn
 - Changing the Dockerfile or `.dockerignore`.
 - Adding production environment variables.
 - Debugging failed deployments or health checks.
-- Understanding the GitHub Actions → GHCR → Dokploy flow.
+- Understanding the GitHub Actions → GHCR → Dokploy flow, or the staging environment.
 
 ## Pipeline overview
 
-1. Push to `main` triggers `.github/workflows/deploy.yml`.
-2. GitHub Actions builds a Docker image and pushes it to GHCR.
-3. The image is tagged with the commit SHA and `latest`.
-4. Dokploy is triggered via API and pulls the new image.
-5. Dokploy waits for `GET /_health` to return 200 before switching traffic.
-6. If the health check fails, Dokploy rolls back automatically.
+1. A push to `main` (production) or `develop` (staging) triggers `.github/workflows/deploy.yml`.
+2. GitHub Actions builds a Docker image and pushes it to GHCR, tagged with the commit SHA plus `latest` (`main`) or `staging` (`develop`).
+3. The deploy job picks the Dokploy application from the branch (`DOKPLOY_APPLICATION_ID` for `main`, `DOKPLOY_STAGING_APPLICATION_ID` otherwise) and calls Dokploy's API.
+4. Dokploy waits for `GET /_health` to return 200 before switching traffic, and rolls back if it fails.
+
+The `curl` in the deploy job has no `-f`, so a green run does not prove Dokploy accepted the deploy — check the Deployments tab.
+
+## Staging
+
+- App at `staging-api.bogdev.com.co`, SQLite (`DATABASE_CLIENT=sqlite`), started and stopped on demand with `.github/workflows/staging-toggle.yml`. See `docs/CI_CD.md` → Staging Environment.
+- The staging app in Dokploy **builds from the `develop` branch with Nixpacks** (`npm start`), so the `Dockerfile` does not apply there. Anything the app needs at boot must therefore be done by `npm` scripts: `prestart` creates `public/uploads`, and `.dockerignore` (which excludes `public/uploads`) is honoured by that build too.
+- Needs `URL=https://staging-api.bogdev.com.co`, `FEDIVERSE_ENABLED=true`, fresh security keys, and a persistent volume on `/app/.tmp`. Without the volume every deploy wipes the SQLite database: users, followers and the actor's key pair.
+- Behind Traefik, `config/server.ts` must use `proxy: { koa: true }` (Strapi 5 syntax) or Koa sees `http` and federated URLs are generated with the wrong scheme.
 
 ## Dockerfile rules
 
@@ -110,3 +117,4 @@ curl http://localhost:1337/_health
 - Commit real secrets in `.env` files.
 - Copy `.ts` files into the production image.
 - Forget to set `UPLOAD_PATH` and the upload volume in production.
+- Run staging without a persistent volume for `/app/.tmp`.

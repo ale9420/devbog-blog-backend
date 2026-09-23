@@ -1,7 +1,19 @@
 import type { Core } from '@strapi/strapi';
 
+import followerSchema from './content-types/follower/schema.json';
+import interactionSchema from './content-types/interaction/schema.json';
+import stats from './controllers/stats';
+import routes from './routes';
 import { mountFediverseMiddleware } from './federation';
+import actorProfile from './services/actor-profile';
+import followers from './services/followers';
+import interactions from './services/interactions';
+import keys from './services/keys';
 import lifecycle, { subscribe, unsubscribe } from './services/lifecycle';
+import {
+  subscribe as subscribePublisher,
+  unsubscribe as unsubscribePublisher,
+} from './services/publisher';
 
 const plugin = {
   register({ strapi }: { strapi: Core.Strapi }) {
@@ -15,10 +27,21 @@ const plugin = {
 
   bootstrap({ strapi }: { strapi: Core.Strapi }) {
     subscribe(strapi);
+    subscribePublisher(strapi);
   },
 
   destroy() {
     unsubscribe();
+    unsubscribePublisher();
+  },
+
+  contentTypes: {
+    follower: {
+      schema: followerSchema,
+    },
+    interaction: {
+      schema: interactionSchema,
+    },
   },
 
   config: {
@@ -28,8 +51,18 @@ const plugin = {
     validator() {},
   },
 
+  controllers: {
+    stats,
+  },
+
+  routes,
+
   services: {
+    interactions,
     lifecycle,
+    keys,
+    followers,
+    'actor-profile': actorProfile,
   },
 };
 

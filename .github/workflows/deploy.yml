@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'develop']
 
 env:
   REGISTRY: ghcr.io
@@ -37,6 +37,7 @@ jobs:
           tags: |
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=staging,enable=${{ github.ref == 'refs/heads/develop' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -53,9 +54,18 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Select Dokploy application
+        id: app
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "application_id=${{ secrets.DOKPLOY_APPLICATION_ID }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "application_id=${{ secrets.DOKPLOY_STAGING_APPLICATION_ID }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Trigger Dokploy deployment
         run: |
           curl -X POST "${{ secrets.DOKPLOY_SERVER_URL }}/api/application.deploy" \
             -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"applicationId": "${{ secrets.DOKPLOY_APPLICATION_ID }}"}'
+            -d '{"applicationId": "${{ steps.app.outputs.application_id }}"}'

@@ -12,6 +12,7 @@
     "develop": "strapi develop",
     "generate:keys": "node ./scripts/generate-keys.js",
     "seed:example": "node ./scripts/seed.js",
+    "prestart": "node -e \"require('fs').mkdirSync('public/uploads', { recursive: true })\"",
     "start": "strapi start",
     "strapi": "strapi",
     "upgrade": "npx @strapi/upgrade latest",
@@ -32,6 +33,7 @@
   "dependencies": {
     "@fedify/fedify": "2.3.6",
     "@fedify/koa": "2.3.6",
+    "@js-temporal/polyfill": "^0.5.1",
     "@notum-cz/strapi-plugin-seo": "^2.0.12",
     "@strapi/i18n": "^5.50.0",
     "@strapi/plugin-users-permissions": "^5.50.0",
@@ -59,7 +61,7 @@
     "typescript-eslint": "^8.61.1"
   },
   "engines": {
-    "node": ">=20.0.0 <=24.x.x",
+    "node": ">=20.19.0 <=24.x.x",
     "npm": ">=6.0.0"
   },
   "strapi": {

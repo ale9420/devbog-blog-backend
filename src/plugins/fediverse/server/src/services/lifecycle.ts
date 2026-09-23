@@ -25,9 +25,8 @@ const events: TrackedLifecycleEvent[] = [];
 let unsubscribers: Array<() => void> = [];
 
 /**
- * Phase 0 spike: records article publish events so the integration test can
- * verify that `strapi.eventHub` delivers them. Phase 2 (#5) replaces this
- * with Create/Update/Delete(Article) fan-out.
+ * Records article publish events so tests can verify `strapi.eventHub`
+ * delivers them. The actual federation lives in `services/publisher.ts`.
  */
 export function subscribe(strapi: Core.Strapi) {
   const track =

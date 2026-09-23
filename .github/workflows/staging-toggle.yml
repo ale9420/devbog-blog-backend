@@ -1,0 +1,23 @@
+name: Toggle Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Start or stop the staging app'
+        required: true
+        type: choice
+        options:
+          - start
+          - stop
+
+jobs:
+  toggle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Dokploy application.${{ github.event.inputs.action }}
+        run: |
+          curl -sf -X POST "${{ secrets.DOKPLOY_SERVER_URL }}/api/application.${{ github.event.inputs.action }}" \
+            -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"applicationId": "${{ secrets.DOKPLOY_STAGING_APPLICATION_ID }}"}'

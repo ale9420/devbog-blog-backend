@@ -209,9 +209,9 @@ The plan for connecting this backend to the fediverse (ActivityPub/Mastodon) liv
 
 ---
 
-## OpenCode Skills
+## Project Skills
 
-Project-specific agent skills live in `.opencode/skills/`. They are loaded automatically and cover the most common tasks for this headless CMS backend.
+Project-specific agent skills live in `.claude/skills/`. They are loaded automatically by Claude Code and cover the most common tasks for this headless CMS backend.
 
 | Skill                 | Use when...                                                                             |
 | --------------------- | --------------------------------------------------------------------------------------- |
@@ -223,7 +223,7 @@ Project-specific agent skills live in `.opencode/skills/`. They are loaded autom
 | `strapi-subscriber`   | Working with newsletter subscriptions, signup, or confirmation flows                    |
 | `strapi-comments`     | Configuring or querying the comments plugin and moderation settings                     |
 
-Each skill file is at `.opencode/skills/<name>/SKILL.md`.
+Each skill file is at `.claude/skills/<name>/SKILL.md`.
 
 ---
 
@@ -235,4 +235,4 @@ Each skill file is at `.opencode/skills/<name>/SKILL.md`.
 4. **Neon Tech PostgreSQL** used for production database
 5. **Comments plugin** (`strapi-plugin-comments`) enabled for articles
 6. **GitHub Actions workflows** in `.github/workflows/` run CI on PRs/pushes and deploy on `main`
-7. **OpenCode MCP servers** configured in `.opencode/opencode.json`: GitHub + Playwright are disabled by default; the Strapi server (`https://api.bogdev.com.co/mcp`) is enabled and authenticates with a Strapi **Admin API token** read from `~/.config/opencode/secrets/strapi-mcp-admin-token` (content API tokens from Settings → API Tokens are rejected by `/mcp` with 401)
+7. **MCP servers** are configured in `.mcp.json` (Claude Code asks for approval the first time): `strapi` (`https://api.bogdev.com.co/mcp`) authenticates with a Strapi **Admin API token** (content API tokens from Settings → API Tokens are rejected by `/mcp` with 401) and `dokploy` (`@dokploy/mcp`) with a Dokploy API key. Neither secret is in the repo: they are read from `~/.claude/secrets/strapi-mcp-admin-token` and `~/.claude/secrets/dokploy-api-key` (`.claude/scripts/secret-header.sh` builds the auth header). GitHub and Playwright MCP servers are not configured here; Claude Code has its own plugins for both

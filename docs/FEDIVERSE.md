@@ -1,8 +1,8 @@
 # Fediverse Federation (ActivityPub) Plan & Architecture
 
-This document is the source of truth for connecting the DevBog blog backend to the fediverse, so users on Mastodon (and any other ActivityPub network) can follow the blog, receive published articles in their timeline, and reply, like, and boost — with replies landing as moderated comments in the existing `strapi-plugin-comments` collection.
+This document is the source of truth for connecting the BogDev blog backend to the fediverse, so users on Mastodon (and any other ActivityPub network) can follow the blog, receive published articles in their timeline, and reply, like, and boost — with replies landing as moderated comments in the existing `strapi-plugin-comments` collection.
 
-> **Status: Phase 0 (spike) complete** on branch `feat/fediverse-phase-0`. Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
+> **Status: Phases 0–4 complete and verified live on staging. Phase 5 (hardening and rollout) is done except cross-server verification and the production switch-on.** Branch `develop` (staging deploys from it). Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
 
 ## Table of Contents
 
@@ -10,6 +10,7 @@ This document is the source of truth for connecting the DevBog blog backend to t
 - [Architecture](#architecture)
 - [Components](#components)
 - [Federation Flows](#federation-flows)
+- [Discoverability on Other Networks](#discoverability-on-other-networks)
 - [Moderation & Security](#moderation--security)
 - [Risks & Mitigations](#risks--mitigations)
 - [Implementation Phases](#implementation-phases)
@@ -59,8 +60,8 @@ api.bogdev.com.co  (Strapi 5 = Koa)
    │    /fediverse/articles/:documentId (Article objects)     │
    ├──────────────────────────────────────────────────────────┤
    │  Strapi core                                             │
-   │    api::article.article        (publish lifecycles → fan-out)      │
-   │    plugin::comments.comment   (fediverse replies → PENDING)       │
+   │    api::article.article        (publish events → fan-out)          │
+   │    plugin::comments.comment   (replies → PENDING, hidden until approved)│
    │    plugin content types: fediverse-follower, fediverse-interaction│
    │    GET /api/fediverse/articles/:documentId/stats (public)         │
    └──────────────────────────────────────────────────────────┘
@@ -81,32 +82,34 @@ Fedify handles the protocol hard parts: HTTP signatures (including Mastodon's dr
 
 ### Local plugin `src/plugins/fediverse/`
 
-| Part                      | Responsibility                                                                                                                                                          |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `register()`              | Create the `Federation` instance and mount `@fedify/koa` middleware via `strapi.server.use()` (must be `register()`, not `bootstrap()` — see Phase 0 findings)          |
-| `bootstrap()`             | Subscribe to `entry.publish` / `entry.unpublish` on `strapi.eventHub` (Strapi 5 does **not** emit publish lifecycles via `strapi.db.lifecycles` — see Phase 0 findings) |
-| Actor dispatcher          | Serves `/fediverse/user/devbog` — name/avatar/bio derived from the `global`/`about` single types                                                                        |
-| Key pairs dispatcher      | Reads keypairs from plugin store (`strapi.store({ type: 'plugin', name: 'fediverse' })`)                                                                                |
-| Article object dispatcher | Serves `/fediverse/articles/:documentId` as an `Article` (title, excerpt, frontend `url`, cover image, lang)                                                            |
-| Followers dispatcher      | Backed by the `fediverse-follower` content type                                                                                                                         |
-| Inbox listeners           | `Follow`, `Undo(Follow)`, `Block`, `Create(Note)`, `Update(Note)`, `Delete(Note)`, `Like`, `Announce` + `Undo`                                                          |
-| Services                  | `article-federation`, `reply-ingest`, `interactions`, `followers`                                                                                                       |
+| Part                      | Responsibility                                                                                                                                                                                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `register()`              | Create the `Federation` instance and mount `@fedify/koa` middleware via `strapi.server.use()` (must be `register()`, not `bootstrap()` — see Phase 0 findings)                                                                                                        |
+| `bootstrap()`             | Subscribe to `entry.publish` / `entry.unpublish` / `entry.delete` on `strapi.eventHub` (Strapi 5 does **not** emit publish lifecycles via `strapi.db.lifecycles` — see Phase 0 findings); `services/publisher.ts` turns them into `Create`/`Update`/`Delete(Article)` |
+| Actor dispatcher          | Serves `/fediverse/user/devbog` — name/avatar/bio derived from the `global`/`about` single types                                                                                                                                                                      |
+| Key pairs dispatcher      | Reads keypairs from plugin store (`strapi.store({ type: 'plugin', name: 'fediverse' })`)                                                                                                                                                                              |
+| Article object dispatcher | Serves `/fediverse/articles/:documentId` as an `Article` (title, self-contained HTML body, frontend `url`, cover image) — published default-locale articles only                                                                                                      |
+| Outbox dispatcher         | Serves `/fediverse/user/devbog/outbox` — paginated, publicly-addressed `Create(Article)` activities, so a remote server can show/backfill recent posts before anyone there has followed the blog                                                                      |
+| Followers dispatcher      | Backed by the `fediverse-follower` content type                                                                                                                                                                                                                       |
+| NodeInfo dispatcher       | Serves `/nodeinfo/2.1` with honest software/usage stats (published article count)                                                                                                                                                                                     |
+| Inbox listeners           | `Follow`, `Undo(Follow)`, `Block`, `Create(Note)`, `Update(Note)`, `Delete(Note)`, `Like`, `Announce` + `Undo`                                                                                                                                                        |
+| Services                  | `articles` + `publisher` (Phase 2), `replies` (Phase 3), `interactions` (Phase 4), `followers`/`keys`/`actor-profile` (Phase 1)                                                                                                                                       |
 
 ### Plugin content types
 
-| Content type                    | Fields                                                                                                                             |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `plugin::fediverse.follower`    | `actorId` (string, unique, AP actor URI), `handle` (`@user@host`), `name`, `inbox`, `avatar`, `blocked` (boolean)                  |
-| `plugin::fediverse.interaction` | `type` (enum `like`/`boost`), `actorId`, `handle`, `article` (manyToOne → `api::article.article`); unique (type, actorId, article) |
+| Content type                    | Fields                                                                                                                                                                            |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `plugin::fediverse.follower`    | `actorId` (string, AP actor URI), `handle` (`@user@host`), `name`, `inbox`, `avatar`, `blocked` (boolean)                                                                         |
+| `plugin::fediverse.interaction` | `type` (enum `like`/`boost`), `actorId`, `handle`, `articleDocumentId` (string, not a relation — see Phase 4 findings), `interactionKey` (`type\|actor\|article`, used to dedupe) |
 
 ### Comment schema extension
 
-`src/extensions/comments/content-types/comment/schema.json` — extends `strapi-plugin-comments` with:
+`src/extensions/comments/strapi-server.ts` — extends `strapi-plugin-comments` with the fields below. It is a `strapi-server` extension (not an extension `schema.json`) on purpose: Strapi merges schema files shallowly (`{ ...original, ...extension }`), so a `schema.json` declaring `attributes` would replace every attribute of the plugin and break it on the next upgrade.
 
-| Field                  | Purpose                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------- |
-| `fediverseUri`         | Remote Note object id (unique) — dedupe of ingested replies + thread resolution |
-| `fediverseActorHandle` | `@user@host` of the remote author (display/source badge on frontend)            |
+| Field                  | Purpose                                                                                                                           |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `fediverseUri`         | Remote Note object id (unique — checked by the Document Service, not a DB index) — dedupe of ingested replies + thread resolution |
+| `fediverseActorHandle` | `@user@host` of the remote author (display/source badge on frontend)                                                              |
 
 ### Custom public route
 
@@ -116,19 +119,24 @@ Fedify handles the protocol hard parts: HTTP signatures (including Mastodon's dr
 
 - `@fedify/fedify` (pin exact 2.x version — the framework moves fast)
 - `@fedify/koa` (Koa v2/v3 middleware)
+- `@js-temporal/polyfill` (Fedify's timestamp type; explicit because Node has no global `Temporal`)
 
 ### Environment variables
 
-| Variable                     | Default                 | Purpose                                                     |
-| ---------------------------- | ----------------------- | ----------------------------------------------------------- |
-| `FEDIVERSE_ENABLED`          | `false`                 | Master switch (enable explicitly, e.g. staging before prod) |
-| `FEDIVERSE_ACTOR_IDENTIFIER` | `devbog`                | Actor username → `@devbog@api.bogdev.com.co`                |
-| `FRONTEND_URL`               | `https://bogdev.com.co` | Human-facing `url` embedded in federated `Article` objects  |
-| `FRONTEND_ARTICLE_PATH`      | `/blog/{slug}`          | Article URL pattern (confirm against the frontend repo)     |
+| Variable                     | Default                 | Purpose                                                                                                                                                                                                  |
+| ---------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FEDIVERSE_ENABLED`          | `false`                 | Master switch (enable explicitly, e.g. staging before prod)                                                                                                                                              |
+| `URL` _(Strapi's own)_       | `http://localhost:1337` | **Must be the public origin** (e.g. `https://api.bogdev.com.co`). Fan-out runs outside any request and builds every activity id from it; a wrong value makes ids disagree with the ones served over HTTP |
+| `FEDIVERSE_ACTOR_IDENTIFIER` | `devbog`                | Actor username → `@devbog@api.bogdev.com.co`                                                                                                                                                             |
+| `FEDIVERSE_ACTOR_NAME`       | _(unset)_               | Actor display name fallback, used only when `global.siteName` and `about.title` are both empty                                                                                                           |
+| `FEDIVERSE_ACTOR_SUMMARY`    | _(unset)_               | Actor bio fallback, used only when `global.siteDescription` is empty                                                                                                                                     |
+| `FRONTEND_URL`               | `https://bogdev.com.co` | Human-facing `url` embedded in federated `Article` objects                                                                                                                                               |
+| `FRONTEND_ARTICLE_PATH`      | `/blog/{slug}`          | Article URL pattern (confirmed against the frontend repo: default locale, `prefix_except_default`)                                                                                                       |
+| `FRONTEND_DEFAULT_LOCALE`    | `en`                    | Locale the frontend serves without a URL prefix (Nuxt `prefix_except_default`); articles in any other locale get `/<locale>` in their link, e.g. `https://bogdev.com.co/es/blog/{slug}`                  |
 
 ### KV store
 
-Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** — all persistent state (followers, keys, interactions, comments) lives in Strapi content types, so a restart only loses caches. Comment ingestion dedupes by `fediverseUri` regardless, so no duplicate comments can occur across restarts. Upgrade path: `@fedify/postgres` (note: it opens a second pool — watch Neon connection limits) or `@fedify/redis`.
+Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** — all persistent state (followers, actor keys, interactions, comments, and the `federatedArticles` record of which articles were already sent) lives in Strapi content types or the plugin store, so a restart only loses caches. Comment ingestion dedupes by `fediverseUri` regardless, so no duplicate comments can occur across restarts. Upgrade path: `@fedify/postgres` (note: it opens a second pool — watch Neon connection limits) or `@fedify/redis`.
 
 ---
 
@@ -142,33 +150,35 @@ Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** �
 
 ### 2. Publish / update / delete articles
 
-1. Plugin `bootstrap()` subscribes via `strapi.eventHub.on(...)`: `entry.publish` / `entry.unpublish` for publish state (payload `{ model, uid, entry }` with the sanitized entry), plus `entry.update` / `entry.delete` for edits and removals. Events fire **asynchronously, after the operation's transaction commits** — handlers must not assume the DB still holds the pre-operation state.
-2. `entry.publish` → build `Article` object → signed `Create(Article)` fan-out to all accepted followers.
-3. Mastodon renders `Article` as a link card (title, excerpt, cover image from `resources.bogdev.com.co`, link to frontend).
-4. `Update(Article)` on content edits; `Delete(Article)` on unpublish/delete.
-5. Article AP id is stable: `/fediverse/articles/{documentId}`.
-6. **i18n:** only the default locale federates in the MVP.
+1. Plugin `bootstrap()` subscribes via `strapi.eventHub.on(...)` to `entry.publish`, `entry.unpublish` and `entry.delete` (payload `{ model, uid, entry }`). Events fire **asynchronously, after the operation's transaction commits** — handlers must not assume the DB still holds the pre-operation state. In Strapi 5 an edit only reaches the published version when the editor publishes again, so `entry.publish` is also the signal for edits.
+2. `entry.publish` → build `Article` object → signed `Create(Article)` addressed **publicly** (`to: https://www.w3.org/ns/activitystreams#Public`, `cc:` the followers collection) and delivered to every accepted follower's inbox. Public addressing — not just `cc` to followers — is what makes the post eligible for a remote instance's local/federated timeline and public directories; addressing it only to followers would silently cap reach at people who already follow the blog, which undermines the "consumed on other networks" goal (see [Discoverability on Other Networks](#discoverability-on-other-networks)).
+3. The same `Create(Article)` activities are also served from a public **outbox dispatcher** (`/fediverse/user/devbog/outbox`, paginated), so a remote server that discovers the actor — e.g. someone views the profile before deciding to follow — can backfill recent posts. Several Mastodon-derived UIs fetch the outbox on first contact with an unfollowed account.
+4. Mastodon renders `Article` as a link card (title, excerpt, cover image from `resources.bogdev.com.co`, link to frontend).
+5. Re-publishing an article that was already sent → `Update(Article)` (tracked in the plugin store key `federatedArticles`, so no duplicate `Create`); unpublish or delete → `Delete(Article)` with a `Tombstone`, but only if no published default-locale version remains. Failures are logged and never break the editor's publish flow; with no followers nothing is sent and the log says so.
+6. Article AP id is stable: `/fediverse/articles/{documentId}`.
+7. **i18n:** only the default locale federates in the MVP.
 
 ### 3. Reply → comment
 
 1. Inbox receives `Create(Note)` with `inReplyTo` pointing at:
    - our article AP id (`/fediverse/articles/{documentId}`) → top-level comment, or
    - the frontend article URL pattern (some clients use `url`), or
-   - another note's URI matching a stored comment's `fediverseUri` → `threadOf` = that comment (one-hop resolution; unresolvable → attach as top-level, log warning).
+   - another note's URI matching a stored comment's `fediverseUri` → `threadOf` = that comment (one hop). Anything that doesn't resolve to one of our published articles is ignored: it is not our conversation.
 2. Create `plugin::comments.comment` via `strapi.documents()`:
 
-| Comment field          | Source                                                                     |
-| ---------------------- | -------------------------------------------------------------------------- |
-| `content`              | Remote Note content, sanitized to plain text (strip HTML)                  |
-| `authorName`           | Actor `name` or `preferredUsername@host`                                   |
-| `authorAvatar`         | Actor `icon.url`                                                           |
-| `threadOf`             | Resolved parent (see above), else `null`                                   |
-| `approvalStatus`       | `PENDING` — **the existing approval workflow moderates fediverse replies** |
-| `fediverseUri`         | Note object id (dedupe key)                                                |
-| `fediverseActorHandle` | `@user@host`                                                               |
+| Comment field          | Source                                                                                                                        |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `content`              | Remote Note content, sanitized to plain text (strip HTML)                                                                     |
+| `authorName`           | Actor `name` or `preferredUsername@host`                                                                                      |
+| `authorAvatar`         | Actor `icon.url`                                                                                                              |
+| `authorId`             | Remote actor URI (stable identity). `authorEmail` is never set: the plugin exposes it publicly                                |
+| `threadOf`             | Resolved parent (see above), else `null`                                                                                      |
+| `approvalStatus`       | `PENDING` — set explicitly; the plugin's public API would show it, so a global middleware hides it until a moderator approves |
+| `fediverseUri`         | Note object id (dedupe key)                                                                                                   |
+| `fediverseActorHandle` | `@user@host`                                                                                                                  |
 
 3. Dedupe: skip if a comment with the same `fediverseUri` exists.
-4. `Update(Note)` → edit comment content; `Delete(Note)` → set `removed`.
+4. `Update(Note)` → edit the content **and send the comment back to `PENDING`** (an approved comment must not be swappable for spam); `Delete(Note)` → set `removed`. Both are only honoured from the original author.
 5. Admin approves/rejects in the existing comments moderation view — no new admin UI needed.
 
 ### 4. Likes & boosts
@@ -180,11 +190,24 @@ Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** �
 
 ---
 
+## Discoverability on Other Networks
+
+The MVP's technical mechanism is accepting `Follow`s and fanning out to followers, but the actual goal — blog content **consumed on other social networks**, not only by people who already follow the blog — needs a bit more than that:
+
+- **Public addressing** (Federation Flows §2) is required for posts to land in a remote instance's local/federated timeline and directories, not just in individual followers' home feeds. This is a correctness requirement for Phase 2, not a nice-to-have — without it, federation "works" (followers see posts) but the blog is effectively invisible to everyone else on that instance.
+- **Outbox dispatcher** (`/fediverse/user/devbog/outbox`) lets remote servers and apps enumerate recent posts without requiring a follow first. The architecture diagram already lists this endpoint; the phase checklists below now call it out explicitly so it doesn't get skipped as "just an implementation detail" of the actor dispatcher.
+- **`discoverable` actor flag** (`toot:discoverable: true`, from Mastodon's `toot` vocabulary extension namespace): opts the actor into Mastodon's public directory and "suggested accounts." Set on the `Person` object (done in Phase 1).
+- **Cross-server verification**: ActivityPub implementations diverge in how they parse `Article` and `Person` objects. Mastodon is the reference target, but Pleroma/Akkoma, Misskey, Friendica, and GoToSocial are all realistic destinations for this blog's followers, and Meta's Threads has historically shipped partial/limited outbound federation. Still open: verify against at least one non-Mastodon server (Phase 5), not only Mastodon accounts / activitypub.academy.
+- **Fediverse relays** (submitting the actor's public posts to a relay so instances with no existing followers of this domain still see them) are a plausible reach multiplier beyond direct follows, but out of scope for the MVP — tracked under Future Work.
+
+---
+
 ## Moderation & Security
 
-- **Signature verification:** Fedify verifies HTTP signatures before listeners run — unsigned/forged activities never reach ingestion code.
+- **Signature verification:** Fedify verifies HTTP signatures before listeners run — unsigned/forged activities never reach ingestion code. That only covers the _outer_ activity's actor, so listeners also check that an embedded activity (`Undo(Follow)`) or object (`Note.attributedTo`) belongs to the verified sender, and interaction withdrawals key on the verified sender.
 - **Content sanitization:** remote Note content is HTML from untrusted servers — strip to plain text before storing.
-- **Moderation:** all fediverse replies enter `PENDING` (existing `approvalScores` workflow in `config/plugins.ts`); followers can be `blocked`.
+- **Moderation:** all fediverse replies enter `PENDING` and are approved in the existing comments moderation view; remote actors can be `blocked` (their replies are ignored). The `approvalScores`/`moderation`/`nested` options in `config/plugins.ts` are **not** options of `strapi-plugin-comments` 3.x (the only approval option is `approvalFlow: [uids]`) and have no effect; `PENDING` is set explicitly by the reply-ingest code. Edited replies go back to `PENDING` so an approved comment can't be swapped for spam.
+- **Pending replies are hidden by a global middleware.** The plugin's public endpoints return _every_ comment unless the caller filters by `approvalStatus`, and the frontend doesn't. `src/middlewares/hide-unapproved-comments.ts` (registered in `config/middlewares.ts`) prunes `PENDING`/`REJECTED` comments and their subtrees from `GET /api/comments/*`. It is app-level rather than part of the fediverse plugin so it keeps protecting readers even if the plugin is later disabled.
 - **Public API surface unchanged:** fediverse endpoints are handled by Fedify's middleware outside Strapi's auth/permissions; the only new public REST route is the stats endpoint (`auth: false`). No seed/permission changes required.
 - **SSRF:** Fedify fetches remote objects (standard fediverse behavior); keep Fedify updated to benefit from its fetch hardening.
 
@@ -192,13 +215,17 @@ Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** �
 
 ## Risks & Mitigations
 
-| #   | Risk                                                                                                                                                                                                                         | Mitigation                                                                                                                                                                                                                                         |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Middleware ordering in Strapi's Koa stack** — Fedify middleware must intercept `/.well-known/*` and `/fediverse/*` before `strapi::router`, and ideally before `strapi::body` (raw body needed for signature verification) | **Resolved in Phase 0:** mounting via `strapi.server.use()` inside plugin `register()` runs before `initMiddlewares()` (so before `strapi::body`) and before the router (mounted at `listen()`). No fallback needed                                |
-| 2   | **Comments schema extension** — extension fields could be dropped by the plugin's own services                                                                                                                               | Create/update comments via `strapi.documents('plugin::comments.comment')` directly; verify merge in Phase 3                                                                                                                                        |
-| 3   | **Strapi 5 publish lifecycles** — confirm `afterPublish`/`afterUnpublish` fire via `strapi.db.lifecycles.subscribe`                                                                                                          | **Resolved in Phase 0:** they do **not**. Publish maps to `afterCreate` and unpublish to `afterDelete` at the DB layer; publish state changes are only observable via `strapi.eventHub` (`entry.publish` / `entry.unpublish`), emitted post-commit |
-| 4   | **Fedify version churn**                                                                                                                                                                                                     | Pin exact 2.x versions in `package.json`                                                                                                                                                                                                           |
-| 5   | **Neon connection limits** (only if Postgres KV is added later)                                                                                                                                                              | MVP uses `MemoryKvStore`; persistent state lives in Strapi content types                                                                                                                                                                           |
+| #   | Risk                                                                                                                                                                                                                                                   | Mitigation                                                                                                                                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Middleware ordering in Strapi's Koa stack** — Fedify middleware must intercept `/.well-known/*` and `/fediverse/*` before `strapi::router`, and ideally before `strapi::body` (raw body needed for signature verification)                           | **Resolved in Phase 0:** mounting via `strapi.server.use()` inside plugin `register()` runs before `initMiddlewares()` (so before `strapi::body`) and before the router (mounted at `listen()`). No fallback needed                                                 |
+| 2   | **Comments schema extension** — extension fields could be dropped by the plugin's own services                                                                                                                                                         | **Resolved in Phase 3:** fields are added by `strapi-server.ts` on top of the plugin's attributes, and comments are created through `strapi.documents('plugin::comments.comment')`; a test proves the fields persist and `fediverseUri` is unique                   |
+| 3   | **Strapi 5 publish lifecycles** — confirm `afterPublish`/`afterUnpublish` fire via `strapi.db.lifecycles.subscribe`                                                                                                                                    | **Resolved in Phase 0:** they do **not**. Publish maps to `afterCreate` and unpublish to `afterDelete` at the DB layer; publish state changes are only observable via `strapi.eventHub` (`entry.publish` / `entry.unpublish`), emitted post-commit                  |
+| 4   | **Fedify version churn**                                                                                                                                                                                                                               | Pin exact 2.x versions in `package.json`                                                                                                                                                                                                                            |
+| 5   | **Neon connection limits** (only if Postgres KV is added later)                                                                                                                                                                                        | MVP uses `MemoryKvStore`; persistent state lives in Strapi content types                                                                                                                                                                                            |
+| 6   | **Followers-only addressing silently caps reach** — if `Create(Article)` is only `cc`'d to followers (no public `to`), posts never reach federated/local timelines or directories on remote instances, defeating the "consumed on other networks" goal | Address publicly (`to: as:Public`) per Federation Flows §2, and implement the outbox dispatcher so a visitor who hasn't followed yet can still see posts — see [Discoverability on Other Networks](#discoverability-on-other-networks)                              |
+| 7   | **Pending comments visible publicly** — `strapi-plugin-comments` returns every comment from its public API unless the caller filters, and the frontend doesn't                                                                                         | **Resolved in Phase 3:** `src/middlewares/hide-unapproved-comments.ts` prunes `PENDING`/`REJECTED` comments and their subtrees; a test fails without it                                                                                                             |
+| 8   | **Duplicates from concurrent deliveries** — Strapi's `unique: true` creates no database index                                                                                                                                                          | **Resolved for interactions in Phase 4** (post-insert convergence to the oldest row, tested five-way concurrent, on SQLite and Postgres). Comments (`fediverseUri`) and followers (`actorId`) are checked before inserting but not race-proof; accepted as unlikely |
+| 9   | **Production is PostgreSQL, tests were SQLite**                                                                                                                                                                                                        | **Resolved in Phase 5:** the whole suite also passes on PostgreSQL (`TEST_DATABASE_URL`, see `tests/strapi.js`)                                                                                                                                                     |
 
 ---
 
@@ -223,38 +250,92 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **Jest:** `@fedify/fedify` requires `structured-field-values`, an ESM-only `.js` package. Node ≥22 `require()`s it fine (dev/prod), but Jest cannot — `jest.config.js` now uses an esbuild transformer (`tests/helpers/esbuild-transformer.js`) with `transformIgnorePatterns` allowlisting that package.
 - **Spike scope:** keypairs are in-memory (regenerated per boot — fine for the spike); Phase 1 persists them in the plugin store. `tests/fediverse.test.js` covers webfinger, actor document, content negotiation, unknown actor, unsigned inbox rejection, `/_health` isolation, and publish/unpublish event delivery.
 
-### Phase 1 — Blog actor, keypairs, followers `[ ]` (#4)
+### Phase 1 — Blog actor, keypairs, followers `[x]` (#4)
 
-- [ ] Actor dispatcher (profile from `global`/`about`), keypair generation + plugin-store persistence
-- [ ] `fediverse-follower` content type; `Follow` → record + signed `Accept`; `Undo(Follow)`/`Block` → remove; `blocked` flag
-- [ ] Followers collection + NodeInfo
-- [ ] Verify: search `@devbog@api.bogdev.com.co` from a Mastodon account and follow successfully
+- [x] Actor dispatcher (profile from `global`/`about`), keypair generation + plugin-store persistence
+- [x] `fediverse-follower` content type; `Follow` → record + signed `Accept`; `Undo(Follow)`/`Block` → remove; `blocked` flag
+- [x] Followers collection + NodeInfo
+- [x] Actor opts into Mastodon's directory (`toot:discoverable: true`) — see [Discoverability on Other Networks](#discoverability-on-other-networks)
+- [x] Verify: search `@devbog@api.bogdev.com.co` from a Mastodon account and follow successfully
 
-### Phase 2 — Article federation `[ ]` (#5)
+**Phase 1 findings (verified 2026-09-23 against a live Mastodon account on `staging-api.bogdev.com.co`):** the actor dispatcher (now `discoverable: true`), RSA keypair generation + JWK persistence in the plugin store, the `fediverse-follower` content type, the followers dispatcher/counter, NodeInfo, and the `Follow`/`Undo`/`Block` inbox listeners (with signed `Accept`) live in `federation.ts` and `services/{keys,actor-profile,followers}.ts`. `tests/fediverse-phase1.test.js` covers them end-to-end, including a fully HTTP-signed `Follow` → `Accept` round trip against a fake remote actor (`tests/helpers/remote-actor.js`).
 
-- [ ] Article object dispatcher (`/fediverse/articles/:documentId`, stable ids, frontend `url`, cover image)
-- [ ] `entry.publish` → `Create(Article)` fan-out; `Update(Article)` on edit; `Delete(Article)` on unpublish/delete
-- [ ] Verify: article appears in a follower's timeline as a link card
+- **Behind Traefik, Koa must trust the proxy.** Strapi 5 reads `server.proxy.koa`; the old `proxy: true` (Strapi 4 syntax) left `ctx.protocol` as `http`, and `@fedify/koa` builds request URLs from it, so every ActivityPub id came out as `http://`. `config/server.ts` now sets `proxy: { koa: true }` (regression test included). Any new federated URL must be checked over HTTPS on staging, not only locally.
+- **Staging** is the live test bed: `develop` → `:staging` image / Dokploy app on `staging-api.bogdev.com.co` (see `docs/CI_CD.md`). It needs `URL`, `FEDIVERSE_ENABLED=true` and `DATABASE_CLIENT=sqlite`; the app builds via Nixpacks (`npm start`), so `public/uploads` is created by the `prestart` script.
 
-### Phase 3 — Fediverse replies → moderated comments `[ ]` (#6)
+### Phase 2 — Article federation `[x]` (#5)
 
-- [ ] Comment schema extension (`fediverseUri`, `fediverseActorHandle`)
-- [ ] `reply-ingest` service: `Create(Note)` → comment with mapping table above; dedupe; one-hop `threadOf` resolution; plain-text sanitization
-- [ ] `Update(Note)` → edit; `Delete(Note)` → `removed`
-- [ ] Verify: reply from Mastodon → `PENDING` comment → approve → visible via comments REST API
+- [x] Article object dispatcher (`/fediverse/articles/:documentId`, stable ids, frontend `url`, cover image)
+- [x] Outbox dispatcher (`/fediverse/user/devbog/outbox`, paginated), backed by the published articles, so remote servers can backfill posts without a prior follow
+- [x] `entry.publish` → `Create(Article)` addressed **publicly** (`to: as:Public`, `cc:` followers) and fanned out to all accepted followers' inboxes; `Update(Article)` on re-publish; `Delete(Article)` on unpublish/delete
+- [x] Verify: a published article appears in a follower's timeline (verified live on `mastodon.social`, 2026-09-23)
+- [x] Verify: editing and re-publishing propagates as an `Update`, and unpublishing removes it from the remote timeline
+- [x] Verify: the article is visible on the actor's profile/outbox from an account that does not follow it
 
-### Phase 4 — Likes & boosts `[ ]` (#7)
+**Phase 2 findings:**
 
-- [ ] `fediverse-interaction` content type; `Like`/`Announce` + `Undo` handlers
-- [ ] `GET /api/fediverse/articles/:documentId/stats` public route
-- [ ] Verify: like/boost from Mastodon moves the counts
+- **Code layout:** `services/articles.ts` (loading published default-locale articles, building `Article`/`Create`/`Update`/`Delete`, tracking which articles were federated) and `services/publisher.ts` (subscribes to `entry.publish` / `entry.unpublish` / `entry.delete` and sends to `'followers'`). The `Federation` instance is now one per Strapi instance (`getFederation(strapi)`), shared by the HTTP middleware and the publisher. `tests/fediverse-phase2.test.js` covers the dispatcher, outbox, and the fan-out against a fake remote inbox.
+- **Editing = publishing again.** In Strapi 5 an edit only reaches the published version when the editor publishes it, which fires `entry.publish` again. The plugin store key `federatedArticles` records which documents already had a `Create` sent, so the second publish becomes `Update(Article)` instead of a duplicate `Create`. Articles published while the plugin was disabled are never retro-federated (no event, no record).
+- **Delete is guarded.** Unpublish and delete both send `Delete(Article)` (with a `Tombstone`), but only if the article was federated _and_ no published default-locale version remains, so deleting a draft revision doesn't retract a live article.
+- **Body shape.** `content` is self-contained HTML (bold title, escaped excerpt, link to the frontend) so it reads well on servers that ignore `name`/`image`, and the link lets Mastodon build a preview card. `summary` is intentionally **not** set — Mastodon renders it as a content warning. `image` (the cover) is used instead of an attachment so Mastodon keeps the link card rather than showing a bare media attachment. **The article was seen in a Mastodon timeline on staging;** how the card/body actually renders on Mastodon and on other servers (Pleroma, Misskey) is still worth a visual check.
+- **Frontend URLs are locale-aware.** The frontend serves `en` unprefixed and `es` under `/es` (`prefix_except_default`), and the article page loads the post for the _current_ locale. The federated link therefore gets `/<locale>` whenever the article's locale differs from `FRONTEND_DEFAULT_LOCALE`; if Strapi's default locale is `es`, links become `https://bogdev.com.co/es/blog/{slug}`.
+- **Delivery failures are logged.** Fedify reports outbox/inbox failures through LogTape, which isn't configured, so a rejected delivery (for example Mastodon answering 401/422) used to leave no trace. `onOutboxError` and the inbox `onError` now write `[fediverse] ...` entries to Strapi's log — look there first when a post doesn't reach a timeline.
+- **Publish logs say who received it.** Each fan-out logs `[fediverse] Create(Article) for <id> (<slug>): delivered to N followers` or `no followers yet, nothing delivered`; with no followers nothing is sent at all. "The article never reached my timeline" is usually a missing follow — check that line first.
+- **Staging state must persist.** Followers, the actor key pair and federated-article records live in the SQLite database. If `/app/.tmp` isn't a persistent volume, every deploy regenerates the actor key and drops all followers (visible as `hasAdmin: false` on `/admin/init` and a `generated and persisted a new actor key pair` log line), and remote servers keep a follow and a cached key that no longer match.
+- **Background context origin.** Work not tied to a request (the publisher) builds ids from Strapi's public `URL` (`strapi.config.get('server.url')`), so `URL` must be correct in every deployed environment or activity ids will not match the ones served over HTTP.
+- **`slug` is not autogenerated by the document service** (only by the admin UI). Articles without a slug or title are skipped with a `[fediverse] not federating article ...` warning, because there would be no frontend URL to link to. Tests must pass `slug` explicitly.
+- **Test harness fix:** `tests/strapi.js` passed an absolute `DATABASE_FILENAME`, but `config/database.ts` joins it to the project root, so the real SQLite file landed in a stray `home/...` directory the harness never cleaned. Stale rows leaked between runs and eventually pushed articles off the first API page. The path is now relative to the project root.
 
-### Phase 5 — Tests, lint, docs, deployment `[ ]` (#8)
+### Phase 3 — Fediverse replies → moderated comments `[x]` (#6)
 
-- [ ] Supertest coverage: webfinger, actor, stats routes; reply→comment mapping unit tests (existing Jest + isolated SQLite harness)
-- [ ] `npm run lint`, `npm run typecheck`, `npm run test` green
-- [ ] Update this document's status markers; add `.opencode/skills/strapi-fediverse/SKILL.md`
-- [ ] Deployment notes: env vars (`FEDIVERSE_ENABLED`, `FRONTEND_URL`, ...) in `docs/CI_CD.md`/Dokploy config — no proxy changes required
+- [x] Comment schema extension (`fediverseUri`, `fediverseActorHandle`) via `src/extensions/comments/strapi-server.ts`
+- [x] `services/replies.ts`: `Create(Note)` → `PENDING` comment; dedupe by `fediverseUri`; `threadOf` resolution; plain-text sanitization; replies addressing the article by its `id` or its frontend `url`; blocked actors, unpublished articles, unrelated notes and forged authors ignored
+- [x] `Update(Note)` → edit (back to `PENDING`); `Delete(Note)` → `removed`
+- [x] Global middleware hiding `PENDING`/`REJECTED` comments from the public comments API
+- [x] Verify live (2026-09-23, staging): reply from Mastodon → `PENDING` comment in the admin → approve → visible through the comments REST API; reply to that reply nests correctly; deleting the Mastodon reply marks it removed
+
+**Phase 3 findings:**
+
+- **The comments plugin does not hide pending comments.** Its public `GET /api/comments/:relation` (hierarchy) and `/flat` only filter by what the caller passes, and the frontend passes nothing. Storing replies as `PENDING` alone would have published remote spam instantly. The `hide-unapproved-comments` middleware fixes this in the backend; a mutation check (removing it) makes the visibility test fail.
+- **Approval config in `config/plugins.ts` is inert.** See Moderation & Security above. Note that comments left through the site's own form are therefore approved immediately today; enabling the plugin's real `approvalFlow: ['api::article.article']` would put those in `PENDING` too (a product decision, not made here).
+- **Comment `related` is `api::article.article:<documentId>`** (not the numeric id), and `threadOf` is set through the document service by the parent's `documentId`.
+- **Author mapping:** `authorId` = remote actor URI (stable identity), `authorName` = actor name or `preferredUsername`, `authorAvatar` = actor icon, `fediverseActorHandle` = `@user@host`. `authorEmail` is deliberately never set: the plugin exposes it publicly.
+- **Threading is one hop.** A reply to a stored fediverse reply attaches to it via `threadOf`; a reply to something we don't know is ignored (not our conversation), not attached as top-level.
+- **Sanitization order:** tags are stripped first (keeping `<br>`/paragraph breaks), entities decoded after, so an encoded `&lt;script&gt;` ends up as literal text, never markup. The frontend renders comments as text (no `v-html`). Mastodon's leading `@devbog` mention is stripped; content is capped at 5000 characters.
+- **Authorship is checked.** A `Note` whose `attributedTo` differs from the signature-verified activity actor is dropped, and edits/deletes are only honoured from the original author.
+
+### Phase 4 — Likes & boosts `[x]` (#7)
+
+- [x] `plugin::fediverse.interaction` content type; `Like`/`Announce` + `Undo` handlers
+- [x] `GET /api/fediverse/articles/:documentId/stats` public route (`auth: false`, aggregates only)
+- [x] Hardening found on the way: `Undo` now requires the embedded activity's actor to match the signature-verified sender
+- [x] Verify live (2026-09-23, staging): a like and a boost from Mastodon move the counts; undoing them decrements
+
+**Phase 4 findings:**
+
+- **The article is referenced by `articleDocumentId` (a string), not by a relation** as the original plan said. Articles are draft-and-publish and localized, so a relation points at one specific row and can be orphaned every time the article is re-published; the documentId is stable. Interactions of a deleted article are left behind (never counted: the stats route 404s for unknown articles).
+- **`unique: true` in a Strapi schema is not a database constraint.** It is only enforced by the Document Service's validation; the table gets no unique index, so `db.query` can insert duplicates. `interactions.ts` therefore builds a single `interactionKey` (`type|actor|article`) and settles concurrent deliveries _after_ the insert — every writer deletes all rows for the key except the oldest — which converges to one row even across processes and on Postgres, where a lower id can commit after a higher one (a test fires five concurrent inserts). The same caveat applies to `fediverseUri` on comments and `actorId` on followers, which are checked before inserting but are not race-proof; simultaneous duplicate deliveries of the same activity are unlikely, so this was left as is.
+- **Blocked actors don't count, retroactively.** `countInteractions` excludes blocked actors' rows, so blocking someone also removes their earlier likes from the totals.
+- **`Undo` and embedded activities.** Only the outer activity's actor is covered by the HTTP signature. Fedify already refuses to trust an embedded object from a _different origin_ (it tries to re-fetch it), but for two accounts on the _same_ origin the embedded actor was trusted, so the `Undo(Follow)` handler could be made to remove another account's follow. It now requires `undone.actor === undo.actor` (a test fails without it). `Undo(Like/Announce)` removes by the verified sender, so it can only ever retract the sender's own interaction.
+- **Stats endpoint:** returns `{ likes, boosts }` only — never who interacted — and 404s for unpublished or unknown articles. It is a plugin content-API route (`routes/index.ts` + `controllers/stats.ts`) so it is served at `/api/fediverse/articles/:documentId/stats`, outside the Fedify middleware paths.
+
+### Phase 5 — Tests, lint, docs, deployment `[~]` (#8)
+
+- [x] Integration and unit coverage of everything the issue lists — WebFinger (`fediverse.test.js`), actor, keys and follower add/remove with signed `Follow`/`Undo`/`Block` (`fediverse-phase1`), article dispatcher/outbox/fan-out (`phase2`), signed `Create(Note)` → `PENDING` comment with field mapping, dedupe, nesting and sanitizer/URL/prune unit tests (`phase3`), likes/boosts and the public stats route (`phase4`), and the switched-off plugin (`fediverse-disabled`)
+- [x] `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` green; the whole suite also passes on **PostgreSQL** and under **Node 20.20** (the production image's runtime)
+- [x] Update this document's status markers; add `.claude/skills/strapi-fediverse/SKILL.md`
+- [x] Deployment notes: fediverse env vars, requirements and a production rollout/rollback checklist in `docs/CI_CD.md`
+- [ ] Cross-server verification against at least one non-Mastodon implementation (Pleroma/Akkoma, Misskey, or GoToSocial) — see [Discoverability on Other Networks](#discoverability-on-other-networks)
+- [ ] Enable in production (`develop` → `main`, `FEDIVERSE_ENABLED=true` on the production Dokploy app, redeploy)
+
+**Phase 5 findings:**
+
+- **PostgreSQL parity.** Production is PostgreSQL but the suites only ran on SQLite. `tests/strapi.js` now runs against Postgres when `TEST_DATABASE_URL` is set (one database per Jest worker, recreated at start), and all suites pass there. It also confirmed that Strapi creates no unique indexes on Postgres either.
+- **Runtime parity.** The production `Dockerfile` uses `node:20-alpine`, whereas staging (Nixpacks) runs Node 22. Fedify needs an ESM-only package that `require()` only loads on Node ≥ 20.19 / ≥ 22.12, so `engines` now says `>=20.19.0`. The complete suite was run under Node 20.20.2 with Postgres. The Docker image itself (Alpine, `Dockerfile` layout) has not been built end to end here; the first production deploy is its first real run.
+- **Switched-off plugin is tested.** With `FEDIVERSE_ENABLED=false` no route, content type or hook exists, article publishing is unaffected, and the comments-visibility middleware still hides pending comments.
+- **Wire-format check against staging** with `npx @fedify/cli` (`webfinger`, `nodeinfo`, `lookup`): the actor (with `inbox`, `outbox`, `followers`, keys, `discoverable`) and a federated article parse cleanly. The CLI uses the same library as the plugin, so this validates the format, not other servers' behaviour, and does not replace the cross-server item above.
+- **CI scope.** `.github/workflows/ci.yml` runs only for pull requests to and pushes on `main`; `develop` pushes deploy to staging without running it. The `develop` → `main` pull request is where CI gates this work, and it does not run the Postgres variant of the suite.
+- **NodeInfo** reports `localComments: 0` unconditionally; making it a real count is a possible refinement.
 
 ---
 
@@ -266,6 +347,7 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - Admin UI panel in Strapi admin
 - Postgres/Redis KV upgrade
 - WebFinger on the frontend domain (`@devbog@bogdev.com.co`) via Dokploy proxy
+- Fediverse relay submission for reach beyond direct followers
 
 ---
 
