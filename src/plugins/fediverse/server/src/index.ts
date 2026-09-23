@@ -1,6 +1,10 @@
 import type { Core } from '@strapi/strapi';
 
+import followerSchema from './content-types/follower/schema.json';
 import { mountFediverseMiddleware } from './federation';
+import actorProfile from './services/actor-profile';
+import followers from './services/followers';
+import keys from './services/keys';
 import lifecycle, { subscribe, unsubscribe } from './services/lifecycle';
 
 const plugin = {
@@ -21,6 +25,12 @@ const plugin = {
     unsubscribe();
   },
 
+  contentTypes: {
+    follower: {
+      schema: followerSchema,
+    },
+  },
+
   config: {
     default: {
       actorIdentifier: 'devbog',
@@ -30,6 +40,9 @@ const plugin = {
 
   services: {
     lifecycle,
+    keys,
+    followers,
+    'actor-profile': actorProfile,
   },
 };
 
