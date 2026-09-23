@@ -8,7 +8,7 @@
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
       "enabled": false,
-      "env": {
+      "environment": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_TOKEN}"
       }
     },
@@ -16,15 +16,16 @@
       "type": "local",
       "command": ["npx", "-y", "@playwright/mcp"],
       "enabled": false,
-      "env": {}
+      "environment": {}
     },
     "strapi": {
-      "type": "streamable-http",
-      "url": "{env:STRAPI_MCP_URL}/mcp",
+      "type": "remote",
+      "url": "https://api.bogdev.com.co/mcp",
       "headers": {
-        "Authorization": "Bearer {env:STRAPI_MCP_ADMIN_TOKEN}"
+        "Authorization": "Bearer {file:~/.config/opencode/secrets/strapi-mcp-admin-token}"
       },
-      "enabled": false
+      "oauth": false,
+      "enabled": true
     }
   }
 }

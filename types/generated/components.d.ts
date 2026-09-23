@@ -36,7 +36,7 @@ export interface SharedMetaSocial extends Struct.ComponentSchema {
     description: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
-        maxLength: 65;
+        maxLength: 200;
       }>;
     image: Schema.Attribute.Media<'images' | 'files' | 'videos'>;
     socialNetwork: Schema.Attribute.Enumeration<['Facebook', 'Twitter']> &
@@ -44,7 +44,7 @@ export interface SharedMetaSocial extends Struct.ComponentSchema {
     title: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
-        maxLength: 60;
+        maxLength: 70;
       }>;
   };
 }
