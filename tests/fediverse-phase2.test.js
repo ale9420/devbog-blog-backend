@@ -106,11 +106,34 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
       expect(body.published).toBeTruthy();
     });
 
+    it('prefixes the frontend url with the locale when it is not the frontend default', async () => {
+      // Strapi's default locale is `en`; pretend the frontend serves `es` unprefixed.
+      process.env.FRONTEND_DEFAULT_LOCALE = 'es';
+      try {
+        const draft = await createArticle();
+        await publish(draft.documentId);
+
+        const { body } = await getJson(`/fediverse/articles/${draft.documentId}`);
+
+        expect(body.url).toBe(`https://blog.example.test/en/blog/${draft.slug}`);
+      } finally {
+        delete process.env.FRONTEND_DEFAULT_LOCALE;
+      }
+    });
+
     it('returns 404 for a draft-only article and for unknown ids', async () => {
       const draft = await createArticle();
 
       expect((await getJson(`/fediverse/articles/${draft.documentId}`)).status).toBe(404);
       expect((await getJson('/fediverse/articles/does-not-exist')).status).toBe(404);
+    });
+  });
+
+  describe('Actor profile', () => {
+    it('falls back to the BogDev name when no site settings exist', async () => {
+      const { body } = await getJson('/fediverse/user/devbog');
+
+      expect(body.name).toBe('BogDev');
     });
   });
 
@@ -213,6 +236,28 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
           JSON.stringify(a.object).includes(neverFederated.documentId)
         )
       ).toBe(false);
+    });
+
+    it('logs delivery failures instead of dropping them silently', async () => {
+      const row = await strapi.db
+        .query('plugin::fediverse.follower')
+        .findOne({ where: { actorId: remote.actorUrl } });
+      await strapi.db.query('plugin::fediverse.follower').update({
+        where: { documentId: row.documentId },
+        data: { inbox: 'http://127.0.0.1:1/inbox' },
+      });
+      const logError = jest.spyOn(strapi.log, 'error').mockImplementation(() => {});
+
+      try {
+        const draft = await createArticle();
+        await publish(draft.documentId);
+
+        await waitUntil(() =>
+          logError.mock.calls.some(([message]) => String(message).includes('[fediverse]'))
+        );
+      } finally {
+        logError.mockRestore();
+      }
     });
 
     it('does not deliver to blocked followers', async () => {

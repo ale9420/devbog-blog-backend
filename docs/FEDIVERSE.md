@@ -1,6 +1,6 @@
 # Fediverse Federation (ActivityPub) Plan & Architecture
 
-This document is the source of truth for connecting the DevBog blog backend to the fediverse, so users on Mastodon (and any other ActivityPub network) can follow the blog, receive published articles in their timeline, and reply, like, and boost — with replies landing as moderated comments in the existing `strapi-plugin-comments` collection.
+This document is the source of truth for connecting the BogDev blog backend to the fediverse, so users on Mastodon (and any other ActivityPub network) can follow the blog, receive published articles in their timeline, and reply, like, and boost — with replies landing as moderated comments in the existing `strapi-plugin-comments` collection.
 
 > **Status: Phases 0 and 1 complete** (Phase 1 verified live: a real Mastodon account followed the staging actor). **Phase 2 (article federation) is implemented and test-covered, pending live verification on staging.** Branch `develop` (staging deploys from it). Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
 
@@ -122,14 +122,15 @@ Fedify handles the protocol hard parts: HTTP signatures (including Mastodon's dr
 
 ### Environment variables
 
-| Variable                     | Default                 | Purpose                                                                                            |
-| ---------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------- |
-| `FEDIVERSE_ENABLED`          | `false`                 | Master switch (enable explicitly, e.g. staging before prod)                                        |
-| `FEDIVERSE_ACTOR_IDENTIFIER` | `devbog`                | Actor username → `@devbog@api.bogdev.com.co`                                                       |
-| `FEDIVERSE_ACTOR_NAME`       | _(unset)_               | Actor display name fallback, used only when `global.siteName` and `about.title` are both empty     |
-| `FEDIVERSE_ACTOR_SUMMARY`    | _(unset)_               | Actor bio fallback, used only when `global.siteDescription` is empty                               |
-| `FRONTEND_URL`               | `https://bogdev.com.co` | Human-facing `url` embedded in federated `Article` objects                                         |
-| `FRONTEND_ARTICLE_PATH`      | `/blog/{slug}`          | Article URL pattern (confirmed against the frontend repo: default locale, `prefix_except_default`) |
+| Variable                     | Default                 | Purpose                                                                                                                                                                                 |
+| ---------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FEDIVERSE_ENABLED`          | `false`                 | Master switch (enable explicitly, e.g. staging before prod)                                                                                                                             |
+| `FEDIVERSE_ACTOR_IDENTIFIER` | `devbog`                | Actor username → `@devbog@api.bogdev.com.co`                                                                                                                                            |
+| `FEDIVERSE_ACTOR_NAME`       | _(unset)_               | Actor display name fallback, used only when `global.siteName` and `about.title` are both empty                                                                                          |
+| `FEDIVERSE_ACTOR_SUMMARY`    | _(unset)_               | Actor bio fallback, used only when `global.siteDescription` is empty                                                                                                                    |
+| `FRONTEND_URL`               | `https://bogdev.com.co` | Human-facing `url` embedded in federated `Article` objects                                                                                                                              |
+| `FRONTEND_ARTICLE_PATH`      | `/blog/{slug}`          | Article URL pattern (confirmed against the frontend repo: default locale, `prefix_except_default`)                                                                                      |
+| `FRONTEND_DEFAULT_LOCALE`    | `en`                    | Locale the frontend serves without a URL prefix (Nuxt `prefix_except_default`); articles in any other locale get `/<locale>` in their link, e.g. `https://bogdev.com.co/es/blog/{slug}` |
 
 ### KV store
 
@@ -268,6 +269,8 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **Editing = publishing again.** In Strapi 5 an edit only reaches the published version when the editor publishes it, which fires `entry.publish` again. The plugin store key `federatedArticles` records which documents already had a `Create` sent, so the second publish becomes `Update(Article)` instead of a duplicate `Create`. Articles published while the plugin was disabled are never retro-federated (no event, no record).
 - **Delete is guarded.** Unpublish and delete both send `Delete(Article)` (with a `Tombstone`), but only if the article was federated _and_ no published default-locale version remains, so deleting a draft revision doesn't retract a live article.
 - **Body shape.** `content` is self-contained HTML (bold title, escaped excerpt, link to the frontend) so it reads well on servers that ignore `name`/`image`, and the link lets Mastodon build a preview card. `summary` is intentionally **not** set — Mastodon renders it as a content warning. `image` (the cover) is used instead of an attachment so Mastodon keeps the link card rather than showing a bare media attachment. **This rendering is a hypothesis until verified live on Mastodon** (the last unchecked item).
+- **Frontend URLs are locale-aware.** The frontend serves `en` unprefixed and `es` under `/es` (`prefix_except_default`), and the article page loads the post for the _current_ locale. The federated link therefore gets `/<locale>` whenever the article's locale differs from `FRONTEND_DEFAULT_LOCALE`; if Strapi's default locale is `es`, links become `https://bogdev.com.co/es/blog/{slug}`.
+- **Delivery failures are logged.** Fedify reports outbox/inbox failures through LogTape, which isn't configured, so a rejected delivery (for example Mastodon answering 401/422) used to leave no trace. `onOutboxError` and the inbox `onError` now write `[fediverse] ...` entries to Strapi's log — look there first when a post doesn't reach a timeline.
 - **Background context origin.** Work not tied to a request (the publisher) builds ids from Strapi's public `URL` (`strapi.config.get('server.url')`), so `URL` must be correct in every deployed environment or activity ids will not match the ones served over HTTP.
 - **`slug` is not autogenerated by the document service** (only by the admin UI). Articles without a slug or title are skipped with a `[fediverse] not federating article ...` warning, because there would be no frontend URL to link to. Tests must pass `slug` explicitly.
 - **Test harness fix:** `tests/strapi.js` passed an absolute `DATABASE_FILENAME`, but `config/database.ts` joins it to the project root, so the real SQLite file landed in a stray `home/...` directory the harness never cleaned. Stale rows leaked between runs and eventually pushed articles off the first API page. The path is now relative to the project root.

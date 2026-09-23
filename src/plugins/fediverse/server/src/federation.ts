@@ -63,9 +63,19 @@ async function extractAvatarUrl(
   }
 }
 
-export function createFediverseFederation(): Federation<FediverseContextData> {
+type Logger = Pick<Core.Strapi['log'], 'error'>;
+
+export function createFediverseFederation(log?: Logger): Federation<FediverseContextData> {
   const federation = createFederation<FediverseContextData>({
     kv: new MemoryKvStore(),
+    // Fedify reports delivery failures through LogTape, which isn't configured
+    // here, so without this hook a rejected delivery (e.g. Mastodon answering
+    // 401/422) would leave no trace in Strapi's logs.
+    onOutboxError: (error, activity) => {
+      log?.error(
+        `[fediverse] delivery failed for ${activity?.id?.href ?? '(unknown activity)'}: ${error.message}`
+      );
+    },
     // Lets tests dereference a fake remote actor served from 127.0.0.1 (real
     // remotes are always public hosts). Never true outside NODE_ENV=test.
     allowPrivateAddress: process.env.NODE_ENV === 'test',
@@ -284,6 +294,9 @@ export function createFediverseFederation(): Federation<FediverseContextData> {
       if (removed) {
         strapi.log.info(`[fediverse] removed follower after Block from ${block.actorId.href}`);
       }
+    })
+    .onError((ctx, error) => {
+      ctx.data.strapi.log.error(`[fediverse] inbox listener failed: ${error.message}`);
     });
 
   return federation;
@@ -295,7 +308,7 @@ const federations = new WeakMap<Core.Strapi, Federation<FediverseContextData>>()
 export function getFederation(strapi: Core.Strapi): Federation<FediverseContextData> {
   let federation = federations.get(strapi);
   if (federation == null) {
-    federation = createFediverseFederation();
+    federation = createFediverseFederation(strapi.log);
     federations.set(strapi, federation);
   }
   return federation;

@@ -7,8 +7,8 @@ export interface ActorProfile {
   iconUrl: string | null;
 }
 
-const DEFAULT_NAME = 'DevBog';
-const DEFAULT_SUMMARY = 'The DevBog blog, federated on the fediverse.';
+const DEFAULT_NAME = 'BogDev';
+const DEFAULT_SUMMARY = 'The BogDev blog, federated on the fediverse.';
 
 interface GlobalSettings {
   siteName?: string | null;
@@ -34,7 +34,7 @@ function absoluteUrl(url: string | null | undefined, baseUrl: string): string | 
  * `about` single types, with env-var and hardcoded fallbacks so the actor is
  * always presentable even on a fresh install:
  *
- *   name    ← global.siteName → about.title → FEDIVERSE_ACTOR_NAME → "DevBog"
+ *   name    ← global.siteName → about.title → FEDIVERSE_ACTOR_NAME → "BogDev"
  *   summary ← global.siteDescription → FEDIVERSE_ACTOR_SUMMARY → default
  *   icon    ← global.favicon (resolved against the actor URL)
  */

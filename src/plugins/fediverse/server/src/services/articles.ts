@@ -47,11 +47,19 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-/** Human-facing URL of an article on the frontend (`FRONTEND_URL` + `FRONTEND_ARTICLE_PATH`). */
-export function getFrontendArticleUrl(slug: string): URL {
+/**
+ * Human-facing URL of an article on the frontend (`FRONTEND_URL` +
+ * `FRONTEND_ARTICLE_PATH`). The frontend serves its default locale without a
+ * prefix (Nuxt i18n `prefix_except_default`) and every other locale under
+ * `/<locale>`, so an article whose locale differs from `FRONTEND_DEFAULT_LOCALE`
+ * gets that prefix — otherwise the link would open the wrong language.
+ */
+export function getFrontendArticleUrl(slug: string, locale?: string | null): URL {
   const base = (process.env.FRONTEND_URL ?? 'https://bogdev.com.co').replace(/\/+$/, '');
   const path = process.env.FRONTEND_ARTICLE_PATH ?? '/blog/{slug}';
-  return new URL(base + path.replace('{slug}', encodeURIComponent(slug)));
+  const frontendDefault = process.env.FRONTEND_DEFAULT_LOCALE ?? 'en';
+  const prefix = locale && locale !== frontendDefault ? `/${locale}` : '';
+  return new URL(base + prefix + path.replace('{slug}', encodeURIComponent(slug)));
 }
 
 /** Only the default locale is federated in the MVP. */
@@ -133,7 +141,7 @@ export function buildArticle(
   actorIdentifier: string,
   record: ArticleRecord
 ): Article {
-  const url = getFrontendArticleUrl(record.slug);
+  const url = getFrontendArticleUrl(record.slug, record.locale);
   const content = [
     `<p><strong>${escapeHtml(record.title)}</strong></p>`,
     record.description ? `<p>${escapeHtml(record.description)}</p>` : '',
