@@ -6,11 +6,11 @@ const { createStrapi, compileStrapi } = require('@strapi/strapi');
 
 // One SQLite file per Jest worker: suites run in parallel workers and each one
 // deletes/recreates its database, so a shared file makes them clobber each other.
-const TEST_DB_PATH = path.join(
-  process.cwd(),
-  '.tmp',
-  `test-${process.env.JEST_WORKER_ID || '1'}.db`
-);
+// config/database.ts resolves DATABASE_FILENAME relative to the project root, so
+// the env var must stay relative or the real file lands somewhere this harness
+// never cleans up (stale rows then leak between runs).
+const TEST_DB_RELATIVE_PATH = path.join('.tmp', `test-${process.env.JEST_WORKER_ID || '1'}.db`);
+const TEST_DB_PATH = path.join(process.cwd(), TEST_DB_RELATIVE_PATH);
 
 function setupEnvironment() {
   process.env.NODE_ENV = 'test';
@@ -28,7 +28,7 @@ function setupEnvironment() {
 
   // Use an isolated SQLite database for tests
   process.env.DATABASE_CLIENT = 'sqlite';
-  process.env.DATABASE_FILENAME = TEST_DB_PATH;
+  process.env.DATABASE_FILENAME = TEST_DB_RELATIVE_PATH;
 }
 
 let instance;
