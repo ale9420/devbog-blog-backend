@@ -99,6 +99,7 @@ export function createFediverseFederation(): Federation<FediverseContextData> {
         url: actorUri,
         inbox: ctx.getInboxUri(identifier),
         followers: ctx.getFollowersUri(identifier),
+        outbox: ctx.getOutboxUri(identifier),
         discoverable: true,
         icon: profile.iconUrl ? new Image({ url: new URL(profile.iconUrl) }) : undefined,
         publicKey: keyPairs[0]?.cryptographicKey,

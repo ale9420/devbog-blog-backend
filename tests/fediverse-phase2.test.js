@@ -115,6 +115,12 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
   });
 
   describe('Outbox dispatcher', () => {
+    it('is advertised on the actor so remote servers can discover it', async () => {
+      const { body } = await getJson('/fediverse/user/devbog');
+
+      expect(body.outbox).toBe(`http://${host}/fediverse/user/devbog/outbox`);
+    });
+
     it('lists published articles as publicly-addressed Create activities, newest first', async () => {
       const older = await createArticle();
       await publish(older.documentId);
