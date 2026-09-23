@@ -1,14 +1,21 @@
 import type { Core } from '@strapi/strapi';
 
-import { createFederation, MemoryKvStore, type Federation } from '@fedify/fedify';
+import {
+  createFederation,
+  MemoryKvStore,
+  type Federation,
+  type InboxContext,
+} from '@fedify/fedify';
 import {
   Accept,
+  Announce,
   Article,
   Block,
   Create,
   Delete,
   Follow,
   Image,
+  Like,
   Link,
   Note,
   Person,
@@ -25,10 +32,17 @@ import {
   findPublishedArticle,
   listPublishedArticles,
 } from './services/articles';
+import { resolveArticleId } from './services/articles';
 import { getActorKeyPairs } from './services/keys';
+import {
+  recordInteraction,
+  removeInteraction,
+  type InteractionType,
+} from './services/interactions';
 import { ingestReply, removeReply, updateReply, type ReplyContext } from './services/replies';
 import {
   countFollowers,
+  isActorBlocked,
   listFollowers,
   recordFollower,
   removeFollower,
@@ -114,6 +128,51 @@ async function describeRemoteActor(
     (typeof username === 'string' && username) ||
     handle;
   return { handle, name, avatar: await extractAvatarUrl(strapi, actor, documentLoader) };
+}
+
+/**
+ * Records a `Like`/`Announce` of one of our articles. Anything else — other
+ * servers' posts, unpublished articles, blocked actors — is ignored.
+ */
+async function receiveInteraction(
+  type: InteractionType,
+  ctx: InboxContext<FediverseContextData>,
+  activity: Like | Announce
+): Promise<void> {
+  const strapi = ctx.data.strapi;
+  if (activity.actorId == null || activity.objectId == null) return;
+
+  const articleDocumentId = await resolveArticleId(
+    strapi,
+    activity.objectId.href,
+    replyContext(ctx).parseArticleUri
+  );
+  if (!articleDocumentId) return;
+  if ((await findPublishedArticle(strapi, articleDocumentId)) == null) return;
+  if (await isActorBlocked(strapi, activity.actorId.href)) return;
+
+  const actor = await activity.getActor({
+    documentLoader: ctx.documentLoader,
+    suppressError: true,
+  });
+  let handle: string | null = null;
+  try {
+    handle = await getActorHandle((actor as Actor | null) ?? activity.actorId);
+  } catch {
+    handle = null;
+  }
+
+  const result = await recordInteraction(strapi, {
+    type,
+    actorId: activity.actorId.href,
+    handle,
+    articleDocumentId,
+  });
+  if (result === 'created') {
+    strapi.log.info(
+      `[fediverse] ${type} from ${handle ?? activity.actorId.href} on ${articleDocumentId}`
+    );
+  }
 }
 
 type Logger = Pick<Core.Strapi['log'], 'error'>;
@@ -321,23 +380,59 @@ export function createFediverseFederation(log?: Logger): Federation<FediverseCon
       const strapi = ctx.data.strapi;
       if (undo.actorId == null) return;
 
-      // Undo(Follow) embeds the original Follow object.
+      // The Undo embeds the original activity. Only the *outer* actor is covered
+      // by the verified HTTP signature, so the embedded one must match it —
+      // otherwise any server could undo somebody else's follow or like.
       const undone = await undo.getObject({
         documentLoader: ctx.documentLoader,
         suppressError: true,
       });
-      if (undone instanceof Follow && undone.actorId != null) {
-        const removed = await removeFollower(strapi, undone.actorId.href);
+      if (undone instanceof Follow || undone instanceof Like || undone instanceof Announce) {
+        if (undone.actorId?.href !== undo.actorId.href) {
+          strapi.log.warn(
+            `[fediverse] ignoring Undo from ${undo.actorId.href}: embedded activity belongs to ${undone.actorId?.href ?? 'nobody'}`
+          );
+          return;
+        }
+      }
+
+      if (undone instanceof Follow) {
+        const removed = await removeFollower(strapi, undone.actorId!.href);
         if (removed) {
-          strapi.log.info(`[fediverse] unfollowed: ${undone.actorId.href}`);
+          strapi.log.info(`[fediverse] unfollowed: ${undone.actorId!.href}`);
+        }
+        return;
+      }
+
+      if (undone instanceof Like || undone instanceof Announce) {
+        const type: InteractionType = undone instanceof Like ? 'like' : 'boost';
+        if (undone.objectId == null) return;
+        const articleDocumentId = await resolveArticleId(
+          strapi,
+          undone.objectId.href,
+          replyContext(ctx).parseArticleUri
+        );
+        if (!articleDocumentId) return;
+
+        const removed = await removeInteraction(strapi, {
+          type,
+          actorId: undo.actorId.href,
+          articleDocumentId,
+        });
+        if (removed) {
+          strapi.log.info(
+            `[fediverse] ${type} withdrawn by ${undo.actorId.href} on ${articleDocumentId}`
+          );
         }
         return;
       }
 
       strapi.log.warn(
-        `[fediverse] ignoring Undo whose object is not an embedded Follow (${undo.objectId?.href ?? 'no object id'})`
+        `[fediverse] ignoring Undo whose object is not an embedded Follow, Like or Announce (${undo.objectId?.href ?? 'no object id'})`
       );
     })
+    .on(Like, (ctx, like) => receiveInteraction('like', ctx, like))
+    .on(Announce, (ctx, announce) => receiveInteraction('boost', ctx, announce))
     .on(Block, async (ctx, block) => {
       const strapi = ctx.data.strapi;
       if (block.actorId == null) return;

@@ -111,6 +111,19 @@ export async function findArticleDocumentIdByUrl(
   return row?.documentId ?? null;
 }
 
+/**
+ * Maps a URI a remote server used for one of our articles to its documentId:
+ * either the ActivityPub object id (via `parseArticleUri`) or, since some
+ * clients use the `url`, the frontend URL.
+ */
+export async function resolveArticleId(
+  strapi: Core.Strapi,
+  uri: string,
+  parseArticleUri: (uri: string) => string | null
+): Promise<string | null> {
+  return parseArticleUri(uri) ?? (await findArticleDocumentIdByUrl(strapi, uri));
+}
+
 /** Only the default locale is federated in the MVP. */
 export async function getDefaultLocale(strapi: Core.Strapi): Promise<string> {
   const locale = await strapi.plugin('i18n').service('locales').getDefaultLocale();

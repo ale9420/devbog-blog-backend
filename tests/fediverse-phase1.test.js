@@ -277,6 +277,39 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
       }
     });
 
+    it("does not let one account undo another account's follow on the same server", async () => {
+      const attacker = await createRemoteActor({ preferredUsername: 'attacker' });
+      try {
+        // Same origin as the attacker: Fedify trusts objects embedded from the
+        // sender's own origin, so only our actor check stands in the way.
+        const victimId = `${new URL(attacker.actorUrl).origin}/users/victim`;
+        await followersService.recordFollower(strapi, { actorId: victimId });
+
+        // Signed by the attacker, but embedding a Follow that claims to be the victim's.
+        const res = await attacker.postSignedActivity(`${actorUrl}/inbox`, {
+          '@context': 'https://www.w3.org/ns/activitystreams',
+          id: `${attacker.actorUrl}/undo/forged`,
+          type: 'Undo',
+          actor: attacker.actorUrl,
+          object: {
+            id: `${victimId}/follows/1`,
+            type: 'Follow',
+            actor: victimId,
+            object: actorUrl,
+          },
+        });
+        expect(res.ok).toBe(true);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        const row = await strapi.db
+          .query('plugin::fediverse.follower')
+          .findOne({ where: { actorId: victimId } });
+        expect(row).not.toBeNull();
+      } finally {
+        await attacker.close();
+      }
+    });
+
     it('removes the follower on Block', async () => {
       const remote = await createRemoteActor({ preferredUsername: 'signed-carol' });
       try {

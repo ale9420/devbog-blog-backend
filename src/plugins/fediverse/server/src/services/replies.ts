@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 
-import { ARTICLE_UID, findArticleDocumentIdByUrl, findPublishedArticle } from './articles';
+import { ARTICLE_UID, findPublishedArticle, resolveArticleId } from './articles';
 import { isActorBlocked } from './followers';
 
 export const COMMENT_UID = 'plugin::comments.comment';
@@ -111,8 +111,7 @@ async function resolveTarget(
   inReplyTo: string,
   context: ReplyContext
 ): Promise<{ articleId: string; parent: CommentRow | null } | null> {
-  const articleId =
-    context.parseArticleUri(inReplyTo) ?? (await findArticleDocumentIdByUrl(strapi, inReplyTo));
+  const articleId = await resolveArticleId(strapi, inReplyTo, context.parseArticleUri);
   if (articleId) return { articleId, parent: null };
 
   const parent = await findCommentByUri(strapi, inReplyTo);

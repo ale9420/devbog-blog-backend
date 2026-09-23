@@ -2,7 +2,7 @@
 
 This document is the source of truth for connecting the BogDev blog backend to the fediverse, so users on Mastodon (and any other ActivityPub network) can follow the blog, receive published articles in their timeline, and reply, like, and boost — with replies landing as moderated comments in the existing `strapi-plugin-comments` collection.
 
-> **Status: Phases 0, 1, 2 and 3 complete and verified live on staging** (follow, article delivery/edit/unpublish, and Mastodon replies arriving as moderated comments). Next up: Phase 4 (likes and boosts). Branch `develop` (staging deploys from it). Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
+> **Status: Phases 0–3 complete and verified live on staging. Phase 4 (likes and boosts) is implemented and test-covered, pending a live check from Mastodon.** Branch `develop` (staging deploys from it). Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
 
 ## Table of Contents
 
@@ -93,7 +93,7 @@ Fedify handles the protocol hard parts: HTTP signatures (including Mastodon's dr
 | Followers dispatcher      | Backed by the `fediverse-follower` content type                                                                                                                                                  |
 | NodeInfo dispatcher       | Serves `/nodeinfo/2.1` with honest software/usage stats (published article count)                                                                                                                |
 | Inbox listeners           | `Follow`, `Undo(Follow)`, `Block`, `Create(Note)`, `Update(Note)`, `Delete(Note)`, `Like`, `Announce` + `Undo`                                                                                   |
-| Services                  | `articles` + `publisher` (Phase 2), `followers`/`keys`/`actor-profile` (Phase 1), `reply-ingest`, `interactions` (planned)                                                                       |
+| Services                  | `articles` + `publisher` (Phase 2), `replies` (Phase 3), `interactions` (Phase 4), `followers`/`keys`/`actor-profile` (Phase 1)                                                                  |
 
 ### Plugin content types
 
@@ -298,11 +298,20 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **Sanitization order:** tags are stripped first (keeping `<br>`/paragraph breaks), entities decoded after, so an encoded `&lt;script&gt;` ends up as literal text, never markup. The frontend renders comments as text (no `v-html`). Mastodon's leading `@devbog` mention is stripped; content is capped at 5000 characters.
 - **Authorship is checked.** A `Note` whose `attributedTo` differs from the signature-verified activity actor is dropped, and edits/deletes are only honoured from the original author.
 
-### Phase 4 — Likes & boosts `[ ]` (#7)
+### Phase 4 — Likes & boosts `[~]` (#7)
 
-- [ ] `fediverse-interaction` content type; `Like`/`Announce` + `Undo` handlers
-- [ ] `GET /api/fediverse/articles/:documentId/stats` public route
-- [ ] Verify: like/boost from Mastodon moves the counts
+- [x] `plugin::fediverse.interaction` content type; `Like`/`Announce` + `Undo` handlers
+- [x] `GET /api/fediverse/articles/:documentId/stats` public route (`auth: false`, aggregates only)
+- [x] Hardening found on the way: `Undo` now requires the embedded activity's actor to match the signature-verified sender
+- [ ] Verify live: a like and a boost from Mastodon move the counts; undoing them decrements
+
+**Phase 4 findings:**
+
+- **The article is referenced by `articleDocumentId` (a string), not by a relation** as the original plan said. Articles are draft-and-publish and localized, so a relation points at one specific row and can be orphaned every time the article is re-published; the documentId is stable. Interactions of a deleted article are left behind (never counted: the stats route 404s for unknown articles).
+- **`unique: true` in a Strapi schema is not a database constraint.** It is only enforced by the Document Service's validation; the table gets no unique index, so `db.query` can insert duplicates. `interactions.ts` therefore builds a single `interactionKey` (`type|actor|article`) and settles concurrent deliveries _after_ the insert — every writer deletes all rows for the key except the oldest — which converges to one row even across processes and on Postgres, where a lower id can commit after a higher one (a test fires five concurrent inserts). The same caveat applies to `fediverseUri` on comments and `actorId` on followers, which are checked before inserting but are not race-proof; simultaneous duplicate deliveries of the same activity are unlikely, so this was left as is.
+- **Blocked actors don't count, retroactively.** `countInteractions` excludes blocked actors' rows, so blocking someone also removes their earlier likes from the totals.
+- **`Undo` and embedded activities.** Only the outer activity's actor is covered by the HTTP signature. Fedify already refuses to trust an embedded object from a _different origin_ (it tries to re-fetch it), but for two accounts on the _same_ origin the embedded actor was trusted, so the `Undo(Follow)` handler could be made to remove another account's follow. It now requires `undone.actor === undo.actor` (a test fails without it). `Undo(Like/Announce)` removes by the verified sender, so it can only ever retract the sender's own interaction.
+- **Stats endpoint:** returns `{ likes, boosts }` only — never who interacted — and 404s for unpublished or unknown articles. It is a plugin content-API route (`routes/index.ts` + `controllers/stats.ts`) so it is served at `/api/fediverse/articles/:documentId/stats`, outside the Fedify middleware paths.
 
 ### Phase 5 — Tests, lint, docs, deployment `[ ]` (#8)
 

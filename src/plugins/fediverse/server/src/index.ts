@@ -1,9 +1,13 @@
 import type { Core } from '@strapi/strapi';
 
 import followerSchema from './content-types/follower/schema.json';
+import interactionSchema from './content-types/interaction/schema.json';
+import stats from './controllers/stats';
+import routes from './routes';
 import { mountFediverseMiddleware } from './federation';
 import actorProfile from './services/actor-profile';
 import followers from './services/followers';
+import interactions from './services/interactions';
 import keys from './services/keys';
 import lifecycle, { subscribe, unsubscribe } from './services/lifecycle';
 import {
@@ -35,6 +39,9 @@ const plugin = {
     follower: {
       schema: followerSchema,
     },
+    interaction: {
+      schema: interactionSchema,
+    },
   },
 
   config: {
@@ -44,7 +51,14 @@ const plugin = {
     validator() {},
   },
 
+  controllers: {
+    stats,
+  },
+
+  routes,
+
   services: {
+    interactions,
     lifecycle,
     keys,
     followers,
