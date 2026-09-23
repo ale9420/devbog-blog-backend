@@ -12,6 +12,7 @@
     "develop": "strapi develop",
     "generate:keys": "node ./scripts/generate-keys.js",
     "seed:example": "node ./scripts/seed.js",
+    "prestart": "node -e \"require('fs').mkdirSync('public/uploads', { recursive: true })\"",
     "start": "strapi start",
     "strapi": "strapi",
     "upgrade": "npx @strapi/upgrade latest",
