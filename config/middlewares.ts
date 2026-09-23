@@ -35,6 +35,7 @@ const config: Core.Config.Middlewares = [
   'strapi::session',
   'strapi::favicon',
   'strapi::public',
+  'global::hide-unapproved-comments',
 ];
 
 export default config;

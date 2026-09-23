@@ -62,6 +62,55 @@ export function getFrontendArticleUrl(slug: string, locale?: string | null): URL
   return new URL(base + prefix + path.replace('{slug}', encodeURIComponent(slug)));
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Inverse of {@link getFrontendArticleUrl}: extracts the slug (and locale) from
+ * a frontend article URL, or null if the URL isn't one of ours. Some clients
+ * reply using an article's `url` rather than its ActivityPub `id`.
+ */
+export function parseFrontendArticleUrl(value: string): { slug: string; locale: string } | null {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  const base = new URL(process.env.FRONTEND_URL ?? 'https://bogdev.com.co');
+  if (url.origin !== base.origin) return null;
+
+  const template = process.env.FRONTEND_ARTICLE_PATH ?? '/blog/{slug}';
+  const [before, after] = template.split('{slug}');
+  const basePath = base.pathname.replace(/\/+$/, '');
+  const pattern = new RegExp(
+    `^${escapeRegExp(basePath)}(?:/([A-Za-z]{2}(?:-[A-Za-z]{2})?))?${escapeRegExp(before)}([^/]+)${escapeRegExp(after ?? '')}/?$`
+  );
+  const match = pattern.exec(url.pathname);
+  if (!match) return null;
+
+  return {
+    locale: match[1] ?? process.env.FRONTEND_DEFAULT_LOCALE ?? 'en',
+    slug: decodeURIComponent(match[2]),
+  };
+}
+
+/** documentId of the published article behind a frontend URL, or null. */
+export async function findArticleDocumentIdByUrl(
+  strapi: Core.Strapi,
+  value: string
+): Promise<string | null> {
+  const parsed = parseFrontendArticleUrl(value);
+  if (!parsed) return null;
+  const row = (await strapi.documents(ARTICLE_UID).findFirst({
+    status: 'published',
+    locale: parsed.locale,
+    filters: { slug: parsed.slug },
+  })) as ArticleRow | null;
+  return row?.documentId ?? null;
+}
+
 /** Only the default locale is federated in the MVP. */
 export async function getDefaultLocale(strapi: Core.Strapi): Promise<string> {
   const locale = await strapi.plugin('i18n').service('locales').getDefaultLocale();

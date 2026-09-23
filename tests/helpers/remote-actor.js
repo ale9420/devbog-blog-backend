@@ -2,7 +2,7 @@
 
 const http = require('http');
 const { generateCryptoKeyPair, signRequest } = require('@fedify/fedify');
-const { Person, CryptographicKey } = require('@fedify/fedify/vocab');
+const { Person, CryptographicKey, Image } = require('@fedify/fedify/vocab');
 
 const ACTIVITY_JSON = 'application/activity+json';
 
@@ -14,7 +14,7 @@ const ACTIVITY_JSON = 'application/activity+json';
  * records any activity POSTed to its inbox (e.g. the signed `Accept` our
  * plugin sends back for a `Follow`).
  */
-async function createRemoteActor({ preferredUsername = 'remote-test' } = {}) {
+async function createRemoteActor({ preferredUsername = 'remote-test', name, iconUrl } = {}) {
   const keyPair = await generateCryptoKeyPair();
   const inboxDeliveries = [];
 
@@ -66,6 +66,8 @@ async function createRemoteActor({ preferredUsername = 'remote-test' } = {}) {
     const person = new Person({
       id: new URL(actorUrl),
       preferredUsername,
+      name,
+      icon: iconUrl ? new Image({ url: new URL(iconUrl) }) : undefined,
       inbox: new URL(inboxUrl),
       publicKey: key,
     });

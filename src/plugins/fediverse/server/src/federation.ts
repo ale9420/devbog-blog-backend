@@ -1,7 +1,20 @@
 import type { Core } from '@strapi/strapi';
 
 import { createFederation, MemoryKvStore, type Federation } from '@fedify/fedify';
-import { Accept, Article, Block, Follow, Image, Link, Person, Undo } from '@fedify/fedify/vocab';
+import {
+  Accept,
+  Article,
+  Block,
+  Create,
+  Delete,
+  Follow,
+  Image,
+  Link,
+  Note,
+  Person,
+  Undo,
+  Update,
+} from '@fedify/fedify/vocab';
 import { getActorHandle, type Actor, type DocumentLoader } from '@fedify/fedify/vocab';
 import { createMiddleware } from '@fedify/koa';
 
@@ -13,6 +26,7 @@ import {
   listPublishedArticles,
 } from './services/articles';
 import { getActorKeyPairs } from './services/keys';
+import { ingestReply, removeReply, updateReply, type ReplyContext } from './services/replies';
 import {
   countFollowers,
   listFollowers,
@@ -61,6 +75,45 @@ async function extractAvatarUrl(
     strapi.log.warn('[fediverse] failed to extract follower avatar', { error });
     return null;
   }
+}
+
+function replyContext(ctx: {
+  parseUri(uri: URL): { type: string; class?: unknown; values?: Record<string, string> } | null;
+}): ReplyContext {
+  return {
+    actorIdentifier: ACTOR_IDENTIFIER,
+    parseArticleUri(uri) {
+      try {
+        const parsed = ctx.parseUri(new URL(uri));
+        return parsed?.type === 'object' && parsed.class === Article
+          ? (parsed.values?.documentId ?? null)
+          : null;
+      } catch {
+        return null;
+      }
+    },
+  };
+}
+
+async function describeRemoteActor(
+  strapi: Core.Strapi,
+  actor: Actor | null,
+  fallbackId: URL,
+  documentLoader: DocumentLoader
+) {
+  let handle: string | null = null;
+  try {
+    handle = await getActorHandle(actor ?? fallbackId);
+  } catch {
+    handle = null;
+  }
+  const displayName = actor?.name;
+  const username = actor?.preferredUsername;
+  const name =
+    (typeof displayName === 'string' && displayName) ||
+    (typeof username === 'string' && username) ||
+    handle;
+  return { handle, name, avatar: await extractAvatarUrl(strapi, actor, documentLoader) };
 }
 
 type Logger = Pick<Core.Strapi['log'], 'error'>;
@@ -293,6 +346,85 @@ export function createFediverseFederation(log?: Logger): Federation<FediverseCon
       const removed = await removeFollower(strapi, block.actorId.href);
       if (removed) {
         strapi.log.info(`[fediverse] removed follower after Block from ${block.actorId.href}`);
+      }
+    })
+    .on(Create, async (ctx, create) => {
+      const strapi = ctx.data.strapi;
+      const note = await create.getObject({
+        documentLoader: ctx.documentLoader,
+        suppressError: true,
+      });
+      if (!(note instanceof Note) || note.id == null || create.actorId == null) return;
+
+      // The activity is signature-verified for `create.actor`; a Note claiming a
+      // different author would let one server post as another.
+      if (note.attributionId?.href !== create.actorId.href) {
+        strapi.log.warn(`[fediverse] ignoring Note ${note.id.href}: author does not match sender`);
+        return;
+      }
+      if (note.replyTargetId == null) return;
+
+      const actor = await create.getActor({
+        documentLoader: ctx.documentLoader,
+        suppressError: true,
+      });
+      const remote = await describeRemoteActor(
+        strapi,
+        actor as Actor | null,
+        create.actorId,
+        ctx.documentLoader
+      );
+
+      const result = await ingestReply(
+        strapi,
+        {
+          uri: note.id.href,
+          inReplyTo: note.replyTargetId.href,
+          contentHtml: String(note.content ?? ''),
+          actorId: create.actorId.href,
+          ...remote,
+        },
+        replyContext(ctx)
+      );
+      if (result.status === 'applied') {
+        strapi.log.info(
+          `[fediverse] reply from ${remote.handle ?? create.actorId.href} stored as a PENDING comment`
+        );
+      } else {
+        strapi.log.debug(`[fediverse] reply ${note.id.href} ignored: ${result.reason}`);
+      }
+    })
+    .on(Update, async (ctx, update) => {
+      const strapi = ctx.data.strapi;
+      const note = await update.getObject({
+        documentLoader: ctx.documentLoader,
+        suppressError: true,
+      });
+      if (!(note instanceof Note) || note.id == null || update.actorId == null) return;
+
+      const result = await updateReply(
+        strapi,
+        {
+          uri: note.id.href,
+          actorId: update.actorId.href,
+          contentHtml: String(note.content ?? ''),
+        },
+        replyContext(ctx)
+      );
+      if (result.status === 'applied') {
+        strapi.log.info(`[fediverse] reply ${note.id.href} edited; sent back to PENDING`);
+      }
+    })
+    .on(Delete, async (ctx, del) => {
+      const strapi = ctx.data.strapi;
+      if (del.objectId == null || del.actorId == null) return;
+
+      const result = await removeReply(strapi, {
+        uri: del.objectId.href,
+        actorId: del.actorId.href,
+      });
+      if (result.status === 'applied') {
+        strapi.log.info(`[fediverse] reply ${del.objectId.href} deleted remotely; marked removed`);
       }
     })
     .onError((ctx, error) => {

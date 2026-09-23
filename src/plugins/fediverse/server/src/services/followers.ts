@@ -101,6 +101,12 @@ export async function removeFollower(strapi: Core.Strapi, actorId: string): Prom
   return true;
 }
 
+/** Whether an admin has blocked this remote actor; their activities are ignored. */
+export async function isActorBlocked(strapi: Core.Strapi, actorId: string): Promise<boolean> {
+  const row = (await query(strapi).findOne({ where: { actorId } })) as FollowerRow | null;
+  return row?.blocked === true;
+}
+
 export async function listFollowers(
   strapi: Core.Strapi,
   options: { blocked?: boolean } = {}
@@ -122,6 +128,7 @@ export async function countFollowers(
 }
 
 export default () => ({
+  isActorBlocked,
   recordFollower,
   removeFollower,
   listFollowers,
