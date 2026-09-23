@@ -260,6 +260,30 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
       }
     });
 
+    it('logs how many followers a publish was delivered to, including none', async () => {
+      const logInfo = jest.spyOn(strapi.log, 'info');
+      const messages = () => logInfo.mock.calls.map(([message]) => String(message));
+
+      try {
+        const first = await createArticle();
+        await publish(first.documentId);
+        await waitUntil(() => messages().some((m) => m.includes('delivered to 1 follower')));
+
+        const row = await strapi.db
+          .query('plugin::fediverse.follower')
+          .findOne({ where: { actorId: remote.actorUrl } });
+        await strapi.db.query('plugin::fediverse.follower').delete({
+          where: { documentId: row.documentId },
+        });
+
+        const second = await createArticle();
+        await publish(second.documentId);
+        await waitUntil(() => messages().some((m) => m.includes('no followers yet')));
+      } finally {
+        logInfo.mockRestore();
+      }
+    });
+
     it('does not deliver to blocked followers', async () => {
       const row = await strapi.db
         .query('plugin::fediverse.follower')

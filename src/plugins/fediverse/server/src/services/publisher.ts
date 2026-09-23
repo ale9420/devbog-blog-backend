@@ -12,6 +12,7 @@ import {
   isFederated,
   setFederated,
 } from './articles';
+import { countFollowers } from './followers';
 
 interface EntryEvent {
   uid?: string;
@@ -29,11 +30,22 @@ function createContext(strapi: Core.Strapi) {
   return getFederation(strapi).createContext(new URL(origin), { strapi });
 }
 
-async function sendToFollowers(strapi: Core.Strapi, activity: Activity): Promise<void> {
+/** Sends to every non-blocked follower and returns how many there were (0 = nothing sent). */
+async function sendToFollowers(strapi: Core.Strapi, activity: Activity): Promise<number> {
+  const recipients = await countFollowers(strapi);
+  if (recipients === 0) return 0;
+
   const ctx = createContext(strapi);
   await ctx.sendActivity({ identifier: ACTOR_IDENTIFIER }, 'followers', activity, {
     preferSharedInbox: true,
   });
+  return recipients;
+}
+
+function describeDelivery(recipients: number): string {
+  return recipients === 0
+    ? 'no followers yet, nothing delivered'
+    : `delivered to ${recipients} follower${recipients === 1 ? '' : 's'}`;
 }
 
 async function isDefaultLocale(strapi: Core.Strapi, event: EntryEvent): Promise<boolean> {
@@ -56,13 +68,13 @@ async function onPublish(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
   // Publishing again is how edits go live in Strapi 5, so a known article is an Update.
   const federated = await isFederated(strapi, documentId);
   const ctx = createContext(strapi);
-  await sendToFollowers(
+  const recipients = await sendToFollowers(
     strapi,
     buildArticleActivity(federated ? 'update' : 'create', ctx, ACTOR_IDENTIFIER, record)
   );
   await setFederated(strapi, documentId, true);
   strapi.log.info(
-    `[fediverse] ${federated ? 'Update' : 'Create'}(Article) sent for ${documentId} (${record.slug})`
+    `[fediverse] ${federated ? 'Update' : 'Create'}(Article) for ${documentId} (${record.slug}): ${describeDelivery(recipients)}`
   );
 }
 
@@ -75,9 +87,12 @@ async function onRemoved(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
   if ((await findPublishedArticle(strapi, documentId)) != null) return;
 
   const ctx = createContext(strapi);
-  await sendToFollowers(strapi, buildDeleteActivity(ctx, ACTOR_IDENTIFIER, documentId));
+  const recipients = await sendToFollowers(
+    strapi,
+    buildDeleteActivity(ctx, ACTOR_IDENTIFIER, documentId)
+  );
   await setFederated(strapi, documentId, false);
-  strapi.log.info(`[fediverse] Delete(Article) sent for ${documentId}`);
+  strapi.log.info(`[fediverse] Delete(Article) for ${documentId}: ${describeDelivery(recipients)}`);
 }
 
 /**
