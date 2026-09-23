@@ -1,6 +1,6 @@
 # CI/CD Pipeline Documentation
 
-This document explains how the continuous integration and deployment pipeline works for the DevBog Blog Backend.
+This document explains how the continuous integration and deployment pipeline works for the BogDev blog backend.
 
 ## Table of Contents
 
@@ -315,6 +315,49 @@ DATABASE_PASSWORD=<password>
 # File uploads
 UPLOAD_PATH=/app/public/uploads
 ```
+
+### Fediverse Variables
+
+The fediverse (ActivityPub) plugin is **off by default**. These variables control it; the full behaviour is in `docs/FEDIVERSE.md`.
+
+```env
+# Master switch. Off = no fediverse routes, content types or publish hooks.
+FEDIVERSE_ENABLED=true
+
+# Must be the environment's real public origin (already required above):
+# activities sent in the background build their ids from it.
+URL=https://api.bogdev.com.co
+
+# Optional (defaults shown)
+FEDIVERSE_ACTOR_IDENTIFIER=devbog        # the @user part; changing it later breaks existing follows
+FRONTEND_URL=https://bogdev.com.co       # origin of the article links inside federated posts
+FRONTEND_ARTICLE_PATH=/blog/{slug}       # article path template
+FRONTEND_DEFAULT_LOCALE=en               # locale the frontend serves without a URL prefix
+FEDIVERSE_ACTOR_NAME=                    # fallbacks when the Global/About settings are empty
+FEDIVERSE_ACTOR_SUMMARY=
+```
+
+Requirements that are easy to miss:
+
+- **Node ≥ 20.19 or ≥ 22.12.** Fedify depends on an ESM-only package that `require()` only loads from those versions on. `node:20-alpine` currently resolves to 20.20, and the plugin was verified under that version with PostgreSQL.
+- **Persistent database.** Followers, the actor's key pair and the record of federated articles live in the database. If it is wiped (for instance a SQLite file on a non-persistent volume), every deploy generates a new actor key and drops all followers.
+- **`config/server.ts` uses `proxy: { koa: true }`**, needed behind Traefik so generated URLs use `https`.
+- **No reverse-proxy or DNS changes.** Fedify's routes (`/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/*`) are served by Strapi on the same domain as the API.
+
+### Enabling the Fediverse in Production
+
+1. Merge `develop` into `main` through a pull request, so CI (typecheck, lint, tests, build) gates it. `develop` also carries `proxy.koa`, the `prestart` script and the comments-visibility middleware, which apply even with the fediverse off.
+2. Take a database snapshot or branch first (Neon). On first boot with the plugin enabled Strapi creates `fediverse_followers` and `fediverse_interactions` and adds `fediverse_uri` / `fediverse_actor_handle` to the comments table.
+3. In Dokploy set `FEDIVERSE_ENABLED=true` on the production app and redeploy. Confirm `URL=https://api.bogdev.com.co`.
+4. Verify from outside:
+   ```bash
+   curl -s https://api.bogdev.com.co/_health -o /dev/null -w '%{http_code}\n'      # 204
+   npx @fedify/cli webfinger @devbog@api.bogdev.com.co                                # 200, https links
+   npx @fedify/cli lookup @devbog@api.bogdev.com.co                                    # actor with inbox, outbox, publicKey
+   ```
+5. Follow the actor from a Mastodon account, publish an article, and watch the app logs for `[fediverse]` lines (each fan-out reports how many followers it reached).
+
+**Rollback:** set `FEDIVERSE_ENABLED=false` and redeploy. The routes and hooks disappear; the tables, followers and key pair stay in the database, and the comments-visibility middleware keeps hiding pending comments. Remote servers that still know the actor get 404s until it is enabled again.
 
 ### Generating Security Keys
 
