@@ -527,6 +527,26 @@ Secrets → Actions), the staging app's id from its Dokploy URL — in addition
 to the existing `DOKPLOY_SERVER_URL`/`DOKPLOY_API_KEY`, which are shared
 across both environments.
 
+**Stopping staging when it's not needed:** staging is meant to be run
+on-demand, not 24/7 — it's an extra container on top of whatever else the
+VPS already runs. `.github/workflows/staging-toggle.yml` is a manual
+(`workflow_dispatch`) workflow with a `start`/`stop` input that calls
+Dokploy's `application.start` / `application.stop` API (same auth as
+`application.deploy`, just a different endpoint) to start or stop the
+staging container without touching the Dokploy panel. Run it from the
+Actions tab ("Toggle Staging" → Run workflow), or via the CLI:
+
+```bash
+gh workflow run staging-toggle.yml --ref develop -f action=stop
+gh workflow run staging-toggle.yml --ref develop -f action=start
+```
+
+(`--ref develop` is only needed until this workflow is also on `main`;
+`workflow_dispatch` runs use whichever ref you point it at regardless, but
+it won't show up in the Actions tab's workflow list until it exists on the
+default branch.) Stopping it doesn't delete the app, its volumes, or its
+domain — starting it again brings back the same state.
+
 ### Disabling Auto-Deploy
 
 **Temporarily disable:**
