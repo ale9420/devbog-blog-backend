@@ -63,6 +63,7 @@ Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`
 - Only the outer activity's actor is signature-verified: check embedded actors/authors against it (`Undo`, `Note.attributedTo`).
 - The document service does not autogenerate `slug` (only the admin UI does); articles without one are skipped with a warning.
 - Fedify reports delivery errors through LogTape (unconfigured); `onOutboxError`/inbox `onError` write them to Strapi's log — look for `[fediverse]` lines.
+- The Fedify Koa middleware must only run for federation paths (`/fediverse/*`, `/.well-known/*`, `/nodeinfo/*`): it consumes the request stream of every non-GET request it sees, which hangs any large POST/PUT elsewhere (long articles in the admin). Keep the path guard in `mountFediverseMiddleware`.
 - A staging database that is wiped on deploy drops followers and regenerates the actor key. `/app/.tmp` must be a persistent volume.
 
 ## Testing
