@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_about_project_lists",
+  "info": {
+    "displayName": "Projects",
+    "icon": "briefcase",
+    "description": "Project list with one featured project"
+  },
+  "options": {},
+  "attributes": {
+    "anchor": {
+      "type": "string"
+    },
+    "eyebrow": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "intro": {
+      "type": "text"
+    },
+    "projects": {
+      "type": "component",
+      "repeatable": true,
+      "component": "about.project"
+    }
+  }
+}

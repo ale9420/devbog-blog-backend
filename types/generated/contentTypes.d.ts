@@ -414,6 +414,13 @@ export interface ApiAboutAbout extends Struct.SingleTypeSchema {
   attributes: {
     blocks: Schema.Attribute.DynamicZone<
       [
+        'about.profile',
+        'about.statement',
+        'about.topics',
+        'about.projects',
+        'about.principles',
+        'about.open-source',
+        'about.contact',
         'shared.hero',
         'shared.rich-text',
         'shared.quote',
@@ -656,6 +663,8 @@ export interface PluginCommentsComment extends Struct.CollectionTypeSchema {
     content: Schema.Attribute.Text & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private;
+    fediverseActorHandle: Schema.Attribute.String;
+    fediverseUri: Schema.Attribute.String & Schema.Attribute.Unique;
     isAdminComment: Schema.Attribute.Boolean;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'plugin::comments.comment'> &

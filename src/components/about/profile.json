@@ -1,0 +1,45 @@
+{
+  "collectionName": "components_about_profiles",
+  "info": {
+    "displayName": "Profile",
+    "icon": "user",
+    "description": "Field card: greeting, key facts, calls to action and the plate with a photo"
+  },
+  "options": {},
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "lead": {
+      "type": "text"
+    },
+    "facts": {
+      "type": "component",
+      "repeatable": true,
+      "component": "about.fact"
+    },
+    "links": {
+      "type": "component",
+      "repeatable": true,
+      "component": "about.link"
+    },
+    "photo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "plateLabel": {
+      "type": "string"
+    },
+    "plateCoordinates": {
+      "type": "string"
+    },
+    "caption": {
+      "type": "string"
+    }
+  }
+}

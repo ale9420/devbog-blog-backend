@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_about_links",
+  "info": {
+    "displayName": "Link",
+    "icon": "link",
+    "description": "A labelled link with a button style"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    },
+    "variant": {
+      "type": "enumeration",
+      "enum": ["primary", "secondary", "text"],
+      "default": "text",
+      "required": true
+    }
+  }
+}

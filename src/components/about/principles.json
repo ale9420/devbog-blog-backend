@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_about_principle_lists",
+  "info": {
+    "displayName": "Principles",
+    "icon": "check",
+    "description": "Numbered list of principles"
+  },
+  "options": {},
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "principles": {
+      "type": "component",
+      "repeatable": true,
+      "component": "about.item"
+    }
+  }
+}

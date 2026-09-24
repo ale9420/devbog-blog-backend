@@ -1,0 +1,31 @@
+{
+  "collectionName": "components_about_topic_lists",
+  "info": {
+    "displayName": "Topics",
+    "icon": "grid",
+    "description": "The five blog topics with a short description each"
+  },
+  "options": {},
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "intro": {
+      "type": "text"
+    },
+    "topics": {
+      "type": "component",
+      "repeatable": true,
+      "component": "about.topic"
+    },
+    "footnoteLabel": {
+      "type": "string"
+    },
+    "footnote": {
+      "type": "string"
+    }
+  }
+}

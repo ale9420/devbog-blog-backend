@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_about_open_sources",
+  "info": {
+    "displayName": "Open source",
+    "icon": "github",
+    "description": "Open source note with a code snippet and a short guide"
+  },
+  "options": {},
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "text": {
+      "type": "text"
+    },
+    "code": {
+      "type": "text"
+    },
+    "guideTitle": {
+      "type": "string"
+    },
+    "guide": {
+      "type": "component",
+      "repeatable": true,
+      "component": "about.item"
+    }
+  }
+}

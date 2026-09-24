@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_about_facts",
+  "info": {
+    "displayName": "Fact",
+    "icon": "bulletList",
+    "description": "A label and value pair for a field-guide style list"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "value": {
+      "type": "string",
+      "required": true
+    },
+    "mono": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

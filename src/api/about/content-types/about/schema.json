@@ -32,6 +32,13 @@
         }
       },
       "components": [
+        "about.profile",
+        "about.statement",
+        "about.topics",
+        "about.projects",
+        "about.principles",
+        "about.open-source",
+        "about.contact",
         "shared.hero",
         "shared.rich-text",
         "shared.quote",
