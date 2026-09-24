@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_about_contact_links",
+  "info": {
+    "displayName": "Contact link",
+    "icon": "message",
+    "description": "A social profile shown in the contact list"
+  },
+  "options": {},
+  "attributes": {
+    "network": {
+      "type": "string",
+      "required": true
+    },
+    "handle": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

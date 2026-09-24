@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_about_statements",
+  "info": {
+    "displayName": "Statement",
+    "icon": "quote",
+    "description": "A large statement with supporting text"
+  },
+  "options": {},
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "statement": {
+      "type": "text",
+      "required": true
+    },
+    "body": {
+      "type": "text"
+    }
+  }
+}

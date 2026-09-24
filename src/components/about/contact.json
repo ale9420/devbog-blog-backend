@@ -1,0 +1,38 @@
+{
+  "collectionName": "components_about_contacts",
+  "info": {
+    "displayName": "Contact",
+    "icon": "paperPlane",
+    "description": "Contact block with the fediverse account, an extra link and social profiles"
+  },
+  "options": {},
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "fediverseLabel": {
+      "type": "string"
+    },
+    "fediverseHandle": {
+      "type": "string"
+    },
+    "fediverseLink": {
+      "type": "component",
+      "repeatable": false,
+      "component": "about.link"
+    },
+    "extraLink": {
+      "type": "component",
+      "repeatable": false,
+      "component": "about.link"
+    },
+    "socials": {
+      "type": "component",
+      "repeatable": true,
+      "component": "about.contact-link"
+    }
+  }
+}

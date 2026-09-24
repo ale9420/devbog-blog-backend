@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_about_topics",
+  "info": {
+    "displayName": "Topic",
+    "icon": "layer",
+    "description": "One of the five blog topics with its own description"
+  },
+  "options": {},
+  "attributes": {
+    "category": {
+      "type": "enumeration",
+      "enum": ["privacidad", "diy", "ia", "software", "linux"],
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    }
+  }
+}
