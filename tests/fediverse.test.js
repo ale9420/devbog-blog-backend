@@ -94,6 +94,24 @@ describe('Fediverse federation (Phase 0 spike)', () => {
       .expect(401);
   });
 
+  it('does not stall large request bodies on routes that are not its own', async () => {
+    // @fedify/koa consumes the request stream of every non-GET request; with the
+    // middleware mounted ahead of the body parser, bodies over roughly 16-64 KB
+    // used to hang forever (publishing a long article in the admin did).
+    const big = { email: 'x'.repeat(512 * 1024), password: 'not-a-real-password' };
+
+    const res = await request(strapi.server.httpServer)
+      .post('/admin/login')
+      .set('Content-Type', 'application/json')
+      .send(big)
+      .timeout({ response: 8000, deadline: 12000 });
+
+    // The status is Strapi's own business (this endpoint answers 500 even with
+    // the plugin off); what matters is that it answered instead of waiting for
+    // a body that never arrives.
+    expect(res.status).toBeGreaterThanOrEqual(400);
+  });
+
   it('leaves regular Strapi endpoints unaffected', async () => {
     await request(strapi.server.httpServer).get('/_health').expect(204);
   });

@@ -541,6 +541,23 @@ export function getFederation(strapi: Core.Strapi): Federation<FediverseContextD
   return federation;
 }
 
+// Everything Fedify can answer lives under these prefixes.
+const FEDERATION_PREFIXES = ['/fediverse/', '/.well-known/', '/nodeinfo/'];
+
+function isFederationPath(path: string): boolean {
+  return FEDERATION_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
 export function mountFediverseMiddleware(strapi: Core.Strapi) {
-  return createMiddleware(getFederation(strapi), () => ({ strapi }));
+  const fedify = createMiddleware(getFederation(strapi), () => ({ strapi }));
+
+  // `@fedify/koa` turns the Node request stream of every non-GET request into a
+  // web stream *before* it knows whether the route is its own. That stream
+  // pauses the shared Node stream once its queue fills (bodies of roughly 16 KB
+  // and up), and since this middleware runs ahead of `strapi::body` nobody
+  // drains it: any large POST/PUT elsewhere in the app (e.g. publishing a long
+  // article in the admin) then hangs until the client gives up. Requests that
+  // are not federation paths must therefore never reach it.
+  return (ctx: Parameters<typeof fedify>[0], next: Parameters<typeof fedify>[1]) =>
+    isFederationPath(ctx.path) ? fedify(ctx, next) : next();
 }
