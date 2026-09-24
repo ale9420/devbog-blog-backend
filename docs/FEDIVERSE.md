@@ -2,7 +2,7 @@
 
 This document is the source of truth for connecting the BogDev blog backend to the fediverse, so users on Mastodon (and any other ActivityPub network) can follow the blog, receive published articles in their timeline, and reply, like, and boost — with replies landing as moderated comments in the existing `strapi-plugin-comments` collection.
 
-> **Status: Phases 0–4 complete and verified live on staging. Phase 5 (hardening and rollout) is done except cross-server verification and the production switch-on.** Branch `develop` (staging deploys from it). Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
+> **Status: Phases 0–4 complete and verified live on staging. Phase 5 is done and federation is live in production (`@devbog@api.bogdev.com.co`); only cross-server verification against a non-Mastodon implementation is still open.** `develop` deploys to staging, `main` to production. Implementation is tracked in the [`fediverse-federation` milestone](https://github.com/ale9420/devbog-blog-backend/milestone/1) (one issue per phase, 0–5). Update the phase checklist in this document as work progresses so future agents always see the current state.
 
 ## Table of Contents
 
@@ -325,13 +325,13 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - [x] `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` green; the whole suite also passes on **PostgreSQL** and under **Node 20.20** (the production image's runtime)
 - [x] Update this document's status markers; add `.claude/skills/strapi-fediverse/SKILL.md`
 - [x] Deployment notes: fediverse env vars, requirements and a production rollout/rollback checklist in `docs/CI_CD.md`
-- [ ] Cross-server verification against at least one non-Mastodon implementation (Pleroma/Akkoma, Misskey, or GoToSocial) — see [Discoverability on Other Networks](#discoverability-on-other-networks)
-- [ ] Enable in production (`develop` → `main`, `FEDIVERSE_ENABLED=true` on the production Dokploy app, redeploy)
+- [ ] Cross-server verification against at least one non-Mastodon implementation (Pleroma/Akkoma, Misskey, or GoToSocial) — see [Discoverability on Other Networks](#discoverability-on-other-networks). Waiting on account approval on a non-Mastodon server (as of 2026-09-24)
+- [x] Enable in production (`develop` → `main` via #10 and #11, `FEDIVERSE_ENABLED=true` on the production Dokploy app). Checked 2026-09-24: `/_health` 204; WebFinger, the actor and NodeInfo answer 200 on `api.bogdev.com.co`
 
 **Phase 5 findings:**
 
 - **PostgreSQL parity.** Production is PostgreSQL but the suites only ran on SQLite. `tests/strapi.js` now runs against Postgres when `TEST_DATABASE_URL` is set (one database per Jest worker, recreated at start), and all suites pass there. It also confirmed that Strapi creates no unique indexes on Postgres either.
-- **Runtime parity.** The production `Dockerfile` uses `node:20-alpine`, whereas staging (Nixpacks) runs Node 22. Fedify needs an ESM-only package that `require()` only loads on Node ≥ 20.19 / ≥ 22.12, so `engines` now says `>=20.19.0`. The complete suite was run under Node 20.20.2 with Postgres. The Docker image itself (Alpine, `Dockerfile` layout) has not been built end to end here; the first production deploy is its first real run.
+- **Runtime parity.** The production `Dockerfile` uses `node:20-alpine`, whereas staging (Nixpacks) runs Node 22. Fedify needs an ESM-only package that `require()` only loads on Node ≥ 20.19 / ≥ 22.12, so `engines` now says `>=20.19.0`. The complete suite was run under Node 20.20.2 with Postgres. The Docker image (Alpine, `Dockerfile` layout) was first built end to end by the production deploy, and runs there.
 - **Switched-off plugin is tested.** With `FEDIVERSE_ENABLED=false` no route, content type or hook exists, article publishing is unaffected, and the comments-visibility middleware still hides pending comments.
 - **Wire-format check against staging** with `npx @fedify/cli` (`webfinger`, `nodeinfo`, `lookup`): the actor (with `inbox`, `outbox`, `followers`, keys, `discoverable`) and a federated article parse cleanly. The CLI uses the same library as the plugin, so this validates the format, not other servers' behaviour, and does not replace the cross-server item above.
 - **CI scope.** `.github/workflows/ci.yml` runs only for pull requests to and pushes on `main`; `develop` pushes deploy to staging without running it. The `develop` → `main` pull request is where CI gates this work, and it does not run the Postgres variant of the suite.
