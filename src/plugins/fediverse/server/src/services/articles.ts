@@ -25,7 +25,19 @@ export interface ArticleRecord {
   locale: string | null;
   publishedAt: string;
   updatedAt: string | null;
-  cover: { url: string; mime: string | null; alternativeText: string | null } | null;
+  image: MediaRecord | null;
+}
+
+interface MediaRecord {
+  url: string;
+  mime: string | null;
+  alternativeText: string | null;
+}
+
+interface MediaRow {
+  url?: string | null;
+  mime?: string | null;
+  alternativeText?: string | null;
 }
 
 interface ArticleRow {
@@ -36,8 +48,12 @@ interface ArticleRow {
   locale?: string | null;
   publishedAt?: string | null;
   updatedAt?: string | null;
-  cover?: { url?: string | null; mime?: string | null; alternativeText?: string | null } | null;
+  cover?: MediaRow | null;
+  seo?: { metaImage?: MediaRow | null } | null;
 }
+
+/** `cover` and `seo.metaImage`, the media the federated preview can come from. */
+const ARTICLE_POPULATE = { cover: true, seo: { populate: { metaImage: true } } };
 
 function escapeHtml(value: string): string {
   return value
@@ -130,6 +146,20 @@ export async function getDefaultLocale(strapi: Core.Strapi): Promise<string> {
   return locale as string;
 }
 
+/**
+ * Media usable as the preview image: it must have a URL and, when the mime type
+ * is known, be an image — `cover` and `metaImage` also accept videos and files.
+ */
+function toImage(media: MediaRow | null | undefined): MediaRecord | null {
+  if (!media?.url) return null;
+  if (media.mime && !media.mime.startsWith('image/')) return null;
+  return {
+    url: media.url,
+    mime: media.mime ?? null,
+    alternativeText: media.alternativeText ?? null,
+  };
+}
+
 function toRecord(row: ArticleRow): ArticleRecord | null {
   // Federating an article without a slug would produce a broken frontend URL.
   if (!row.slug || !row.title || !row.publishedAt) return null;
@@ -141,13 +171,8 @@ function toRecord(row: ArticleRow): ArticleRecord | null {
     locale: row.locale ?? null,
     publishedAt: row.publishedAt,
     updatedAt: row.updatedAt ?? null,
-    cover: row.cover?.url
-      ? {
-          url: row.cover.url,
-          mime: row.cover.mime ?? null,
-          alternativeText: row.cover.alternativeText ?? null,
-        }
-      : null,
+    // The article's own image takes priority; the SEO image is only a fallback.
+    image: toImage(row.cover) ?? toImage(row.seo?.metaImage),
   };
 }
 
@@ -161,7 +186,7 @@ export async function findPublishedArticle(
     documentId,
     status: 'published',
     locale,
-    populate: ['cover'],
+    populate: ARTICLE_POPULATE,
   })) as ArticleRow | null;
   return row ? toRecord(row) : null;
 }
@@ -180,7 +205,7 @@ export async function listPublishedArticles(
       sort: 'publishedAt:desc',
       start,
       limit,
-      populate: ['cover'],
+      populate: ARTICLE_POPULATE,
     }) as Promise<ArticleRow[]>,
     documents.count({ status: 'published', locale }),
   ]);
@@ -218,11 +243,11 @@ export function buildArticle(
     url,
     published: toInstant(record.publishedAt),
     updated: record.updatedAt ? toInstant(record.updatedAt) : undefined,
-    image: record.cover
+    image: record.image
       ? new Image({
-          url: new URL(record.cover.url, ctx.origin),
-          mediaType: record.cover.mime ?? undefined,
-          name: record.cover.alternativeText ?? undefined,
+          url: new URL(record.image.url, ctx.origin),
+          mediaType: record.image.mime ?? undefined,
+          name: record.image.alternativeText ?? undefined,
         })
       : undefined,
     to: PUBLIC_COLLECTION,
