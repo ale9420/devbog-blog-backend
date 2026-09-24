@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_about_items",
+  "info": {
+    "displayName": "Item",
+    "icon": "feather",
+    "description": "A short item with an optional title; the text supports inline Markdown links"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "text": {
+      "type": "text",
+      "required": true
+    }
+  }
+}
