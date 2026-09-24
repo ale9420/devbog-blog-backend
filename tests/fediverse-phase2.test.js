@@ -121,6 +121,69 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
       }
     });
 
+    describe('preview image', () => {
+      // Upload rows are inserted directly: no file needs to exist to be referenced.
+      async function createMedia(name, mime) {
+        return strapi.db.query('plugin::upload.file').create({
+          data: {
+            name,
+            hash: name.replace(/\W/g, '_'),
+            ext: `.${mime.split('/')[1]}`,
+            mime,
+            size: 1,
+            url: `/uploads/${name}`,
+            provider: 'local',
+            alternativeText: `${name} alt`,
+          },
+        });
+      }
+
+      const seo = (metaImage) => ({
+        metaTitle: 'SEO title',
+        metaDescription: 'An SEO description that is long enough to pass the validator.',
+        metaImage: metaImage.id,
+      });
+
+      async function publishedImage(data) {
+        const draft = await createArticle(data);
+        await publish(draft.documentId);
+        const { body } = await getJson(`/fediverse/articles/${draft.documentId}`);
+        return body.image;
+      }
+
+      it('prefers the article cover over the SEO image', async () => {
+        const cover = await createMedia('cover.png', 'image/png');
+        const metaImage = await createMedia('seo.jpeg', 'image/jpeg');
+
+        const image = await publishedImage({ cover: cover.id, seo: seo(metaImage) });
+
+        expect(image.url).toBe(`http://${host}/uploads/cover.png`);
+        expect(image.mediaType).toBe('image/png');
+        expect(image.name).toBe('cover.png alt');
+      });
+
+      it('falls back to the SEO image when there is no cover', async () => {
+        const metaImage = await createMedia('seo-only.jpeg', 'image/jpeg');
+
+        const image = await publishedImage({ seo: seo(metaImage) });
+
+        expect(image.url).toBe(`http://${host}/uploads/seo-only.jpeg`);
+      });
+
+      it('skips a cover that is not an image', async () => {
+        const cover = await createMedia('cover.mp4', 'video/mp4');
+        const metaImage = await createMedia('seo-fallback.png', 'image/png');
+
+        const image = await publishedImage({ cover: cover.id, seo: seo(metaImage) });
+
+        expect(image.url).toBe(`http://${host}/uploads/seo-fallback.png`);
+      });
+
+      it('omits the image when the article has none', async () => {
+        expect(await publishedImage()).toBeUndefined();
+      });
+    });
+
     it('returns 404 for a draft-only article and for unknown ids', async () => {
       const draft = await createArticle();
 
