@@ -59,6 +59,24 @@ Sort:
 GET /api/articles?sort[0]=publishedAt:desc
 ```
 
+Categories: the redesign has five, kept in sync on every boot by `src/migrations/consolidate-categories.ts`. Paint and filter them by `key`, a stable enumeration that does not depend on the visible `name`:
+
+```http
+GET /api/categories?sort=order&locale=es
+GET /api/categories?sort=order&locale=en
+GET /api/articles?locale=en&filters[category][key][$eq]=privacidad
+```
+
+| `key` / `slug` | `name` (es)             | English name            | `bird`                                                 | `pillar` | `order` |
+| -------------- | ----------------------- | ----------------------- | ------------------------------------------------------ | -------- | ------- |
+| `privacidad`   | Privacidad              | Privacy                 | Pinchaflor (Diglossa cyanea)                           | true     | 1       |
+| `diy`          | DIY · Hazlo tú mismo    | DIY · Do it yourself    | Golondrina (Pygochelidon cyanoleuca)                   | true     | 2       |
+| `ia`           | Inteligencia artificial | Artificial intelligence | Colibrí chillón (Colibri coruscans)                    | false    | 3       |
+| `software`     | Desarrollo de software  | Software development    | Mirla patinaranja (Turdus fuscater)                    | false    | 4       |
+| `linux`        | Linux y código abierto  | Linux and open source   | Monjita bogotana (Chrysomus icterocephalus bogotensis) | false    | 5       |
+
+Categories are localized: `name` and `description` change with `locale` (`es` is the default), while `slug`, `key`, `bird`, `pillar` and `order` are shared by every locale. An article populates the category row of its own locale. Categories outside the redesign have `key` and `order` set to `null` and may exist only in Spanish.
+
 Pagination (`config/api.ts` sets `defaultLimit: 25`, `maxLimit: 100`):
 
 ```http
