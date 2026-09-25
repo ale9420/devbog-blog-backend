@@ -1,6 +1,8 @@
 'use strict';
 
+const request = require('supertest');
 const { setupStrapi, cleanupStrapi } = require('./strapi');
+const { setPublicPermissions } = require('./helpers/permissions');
 const {
   consolidateCategories,
   hasChanges,
@@ -118,5 +120,42 @@ describe('consolidateCategories', () => {
     const second = await consolidateCategories(strapi);
     expect(hasChanges(second)).toBe(false);
     expect(await strapi.documents(CATEGORY).count()).toBe(6);
+  });
+
+  it('fills key, bird, pillar and order on categories consolidated before those fields existed', async () => {
+    // Production already ran the first version of the migration: right slugs, no new fields.
+    await strapi.db.query(CATEGORY).updateMany({
+      where: { slug: { $in: CATEGORY_TARGETS.map((target) => target.slug) } },
+      data: { key: null, bird: null, pillar: false, order: null },
+    });
+
+    const refill = await consolidateCategories(strapi);
+    expect(refill.updated.sort()).toEqual(['diy', 'ia', 'linux', 'privacidad', 'software']);
+    expect(refill.created).toEqual([]);
+    expect(await categorySlugOf(articles.rag.documentId, 'published')).toBe('ia');
+    expect(hasChanges(await consolidateCategories(strapi))).toBe(false);
+  });
+
+  it('GET /api/categories?sort=order returns the five keys with bird, pillar and order', async () => {
+    await setPublicPermissions('category', ['find', 'findOne']);
+    const res = await request(strapi.server.httpServer)
+      .get('/api/categories')
+      .query({ sort: 'order', filters: { key: { $notNull: true } } })
+      .expect(200);
+
+    expect(
+      res.body.data.map(({ key, bird, pillar, order }) => ({ key, bird, pillar, order }))
+    ).toEqual([
+      { key: 'privacidad', bird: 'Pinchaflor (Diglossa cyanea)', pillar: true, order: 1 },
+      { key: 'diy', bird: 'Golondrina (Pygochelidon cyanoleuca)', pillar: true, order: 2 },
+      { key: 'ia', bird: 'Colibrí chillón (Colibri coruscans)', pillar: false, order: 3 },
+      { key: 'software', bird: 'Mirla patinaranja (Turdus fuscater)', pillar: false, order: 4 },
+      {
+        key: 'linux',
+        bird: 'Monjita bogotana (Chrysomus icterocephalus bogotensis)',
+        pillar: false,
+        order: 5,
+      },
+    ]);
   });
 });

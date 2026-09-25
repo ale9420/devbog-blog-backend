@@ -59,6 +59,23 @@ Sort:
 GET /api/articles?sort[0]=publishedAt:desc
 ```
 
+Categories: the redesign has five, kept in sync on every boot by `src/migrations/consolidate-categories.ts`. Paint and filter them by `key`, a stable enumeration that does not depend on the visible `name`:
+
+```http
+GET /api/categories?sort=order
+GET /api/articles?filters[category][key][$eq]=privacidad
+```
+
+| `key` / `slug` | `name` (es)             | English name            | `bird`                                                 | `pillar` | `order` |
+| -------------- | ----------------------- | ----------------------- | ------------------------------------------------------ | -------- | ------- |
+| `privacidad`   | Privacidad              | Privacy                 | Pinchaflor (Diglossa cyanea)                           | true     | 1       |
+| `diy`          | DIY · Hazlo tú mismo    | DIY · Do it yourself    | Golondrina (Pygochelidon cyanoleuca)                   | true     | 2       |
+| `ia`           | Inteligencia artificial | Artificial intelligence | Colibrí chillón (Colibri coruscans)                    | false    | 3       |
+| `software`     | Desarrollo de software  | Software development    | Mirla patinaranja (Turdus fuscater)                    | false    | 4       |
+| `linux`        | Linux y código abierto  | Linux and open source   | Monjita bogotana (Chrysomus icterocephalus bogotensis) | false    | 5       |
+
+Categories are not localized: the English names live in the frontend (and in `CATEGORY_TARGETS[].nameEn`). Categories outside the redesign have `key` and `order` set to `null`.
+
 Pagination (`config/api.ts` sets `defaultLimit: 25`, `maxLimit: 100`):
 
 ```http

@@ -26,6 +26,21 @@
     },
     "description": {
       "type": "text"
+    },
+    "key": {
+      "type": "enumeration",
+      "enum": ["privacidad", "diy", "ia", "software", "linux"],
+      "unique": true
+    },
+    "bird": {
+      "type": "string"
+    },
+    "pillar": {
+      "type": "boolean",
+      "default": false
+    },
+    "order": {
+      "type": "integer"
     }
   }
 }
