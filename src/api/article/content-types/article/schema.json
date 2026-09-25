@@ -78,6 +78,17 @@
           "localized": true
         }
       }
+    },
+    "plainText": {
+      "type": "text",
+      "private": true,
+      "configurable": false,
+      "visible": false,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     }
   }
 }
