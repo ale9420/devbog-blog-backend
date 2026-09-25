@@ -26,6 +26,10 @@ For a content type with `pluralName: articles`:
 | PUT    | `/api/articles/:id` | Update (authenticated) |
 | DELETE | `/api/articles/:id` | Delete (authenticated) |
 
+### Article search
+
+`GET /api/articles/search?q=…&locale=es&content=1&limit=10` is public (`auth: false`) and returns only published articles, newest first. Without `content` it searches the title; with `content=1` also the description and the body (the private `plainText` field, computed from `blocks` on every save and backfilled at bootstrap). `q` needs at least 3 characters; `limit` caps at 50. Each result has `documentId`, `slug`, `title`, `description`, `publishedAt`, `locale`, `category { slug, name }`, `matchedIn` (`title` | `description` | `content`) and a plain-text `snippet` around the match. The snippet is **not** escaped: escape it before wrapping the match in `<mark>`.
+
 Single types use the same path but return one object:
 
 - `GET /api/global`
