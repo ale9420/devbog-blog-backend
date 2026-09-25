@@ -10,6 +10,7 @@ import followers from './services/followers';
 import interactions from './services/interactions';
 import keys from './services/keys';
 import lifecycle, { subscribe, unsubscribe } from './services/lifecycle';
+import statsService from './services/stats';
 import {
   subscribe as subscribePublisher,
   unsubscribe as unsubscribePublisher,
@@ -63,6 +64,7 @@ const plugin = {
     keys,
     followers,
     'actor-profile': actorProfile,
+    stats: statsService,
   },
 };
 

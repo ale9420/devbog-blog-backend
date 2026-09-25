@@ -25,7 +25,8 @@ The blog is an ActivityPub actor (`@devbog@<api domain>`) served by a local Stra
 | `services/replies.ts`                            | `Create/Update/Delete(Note)` → moderated comments; HTML → plain text                                        |
 | `services/interactions.ts`                       | Likes/boosts, dedupe, counts                                                                                |
 | `services/{followers,keys,actor-profile}.ts`     | Follower rows, persisted actor key pair, actor name/bio from `global`/`about`                               |
-| `controllers/stats.ts`, `routes/`                | `GET /api/fediverse/articles/:documentId/stats`                                                             |
+| `services/stats.ts`                              | Batch counts and ranking as aggregate SQL (likes, boosts, approved fediverse replies)                       |
+| `controllers/stats.ts`, `routes/`                | `GET /api/fediverse/articles/:documentId/stats`, `/articles/stats`, `/articles/ranking`                     |
 
 Outside the plugin: `src/extensions/comments/strapi-server.ts` (adds `fediverseUri`, `fediverseActorHandle`) and `src/middlewares/hide-unapproved-comments.ts`.
 
@@ -45,7 +46,7 @@ The plugin is its own TypeScript project bundled by esbuild (`npm run build:fedi
 
 ## Endpoints
 
-Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/user/:id` (actor), `/fediverse/user/:id/{inbox,outbox,followers}`, `/fediverse/inbox`, `/fediverse/articles/:documentId`. Public Strapi route: `GET /api/fediverse/articles/:documentId/stats` → `{ likes, boosts }` (aggregates only, 404 for unpublished).
+Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/user/:id` (actor), `/fediverse/user/:id/{inbox,outbox,followers}`, `/fediverse/inbox`, `/fediverse/articles/:documentId`. Public Strapi routes (aggregates only, cached 60 s where noted in `docs/FEDIVERSE.md`): `GET /api/fediverse/articles/:documentId/stats` → `{ likes, boosts }` (404 for unpublished); `GET /api/fediverse/articles/stats?documentIds=a,b,c` → `{ [documentId]: { likes, boosts, replies } }` (max 50); `GET /api/fediverse/articles/ranking?page&pageSize&locale` → most discussed first.
 
 ## How it behaves
 
