@@ -89,6 +89,25 @@
           "localized": true
         }
       }
+    },
+    "pathOrder": {
+      "type": "integer",
+      "min": 1,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    }
+  },
+  "config": {
+    "metadatas": {
+      "pathOrder": {
+        "edit": {
+          "label": "pathOrder",
+          "description": "Posición del artículo en la ruta de lectura de su categoría (1 = primero). Déjalo vacío para que no aparezca en la ruta. Se comparte entre idiomas."
+        }
+      }
     }
   }
 }
