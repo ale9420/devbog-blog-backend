@@ -64,6 +64,7 @@ api.bogdev.com.co  (Strapi 5 = Koa)
    │    plugin::comments.comment   (replies → PENDING, hidden until approved)│
    │    plugin content types: fediverse-follower, fediverse-interaction│
    │    GET /api/fediverse/articles/:documentId/stats (public)         │
+   │    GET /api/fediverse/articles/stats | ranking (public)           │
    └──────────────────────────────────────────────────────────┘
                  │
                  ▼
@@ -111,9 +112,15 @@ Fedify handles the protocol hard parts: HTTP signatures (including Mastodon's dr
 | `fediverseUri`         | Remote Note object id (unique — checked by the Document Service, not a DB index) — dedupe of ingested replies + thread resolution |
 | `fediverseActorHandle` | `@user@host` of the remote author (display/source badge on frontend)                                                              |
 
-### Custom public route
+### Custom public routes
 
-`GET /api/fediverse/articles/:documentId/stats` → `{ likes: number, boosts: number }` (`auth: false`) so the frontend can render counts without plugin permissions.
+All `auth: false`, aggregates only (never who interacted), and absent when `FEDIVERSE_ENABLED=false`.
+
+- `GET /api/fediverse/articles/:documentId/stats` → `{ likes: number, boosts: number }`, 404 for unpublished or unknown articles.
+- `GET /api/fediverse/articles/stats?documentIds=a,b,c` (at most 50, else 400) → `{ [documentId]: { likes, boosts, replies } }`. Only articles published in the default locale are included; other ids are left out. `Cache-Control: public, max-age=60`.
+- `GET /api/fediverse/articles/ranking?page=1&pageSize=6&locale=es` → `{ data: [{ documentId, likes, boosts, replies }], meta: { pagination: { page, pageSize, pageCount, total } } }`. Articles published in `locale` (default locale if omitted), ordered by `likes + boosts + replies` desc, then `publishedAt` desc; articles with no interactions come last so paging covers the whole blog. `pageSize` defaults to 6, max 50. `Cache-Control: public, max-age=60`.
+
+`replies` counts approved comments with a `fediverseActorHandle` that are not removed or blocked. Blocked actors' likes, boosts and replies never count.
 
 ### Dependencies
 
@@ -318,6 +325,17 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **Blocked actors don't count, retroactively.** `countInteractions` excludes blocked actors' rows, so blocking someone also removes their earlier likes from the totals.
 - **`Undo` and embedded activities.** Only the outer activity's actor is covered by the HTTP signature. Fedify already refuses to trust an embedded object from a _different origin_ (it tries to re-fetch it), but for two accounts on the _same_ origin the embedded actor was trusted, so the `Undo(Follow)` handler could be made to remove another account's follow. It now requires `undone.actor === undo.actor` (a test fails without it). `Undo(Like/Announce)` removes by the verified sender, so it can only ever retract the sender's own interaction.
 - **Stats endpoint:** returns `{ likes, boosts }` only — never who interacted — and 404s for unpublished or unknown articles. It is a plugin content-API route (`routes/index.ts` + `controllers/stats.ts`) so it is served at `/api/fediverse/articles/:documentId/stats`, outside the Fedify middleware paths.
+
+### Batch counts and ranking `[x]` (#16)
+
+- [x] `GET /api/fediverse/articles/stats` (batch) and `GET /api/fediverse/articles/ranking` for the frontend's Bitácora view and "most discussed in the fediverse" sort
+- [x] Tests with interactions, replies in every moderation state, a blocked actor, a draft, a tie and a second locale (`tests/fediverse-stats.test.js`)
+
+**Findings:**
+
+- **One aggregate query, not a loop.** `services/stats.ts` builds two grouped subqueries — interactions by `articleDocumentId`, fediverse replies by `related` — and left-joins them onto the published article rows of the locale, ordering and paging in SQL. The batch route reuses the same subqueries filtered by id. Table and column names come from `strapi.db.metadata`, not hardcoded.
+- **Counts are per document, not per locale.** Interactions reference the documentId and replies arrive through the default-locale article, so an article shows the same counts in every locale; `locale` only selects which published articles are listed.
+- **Postgres and GROUP BY.** The reply subquery selects `SUBSTR(related, n)` but groups by `related` itself: two parameterized `SUBSTR()` calls in `SELECT` and `GROUP BY` are different expressions to Postgres. `COUNT`/`SUM` come back as strings on Postgres and are converted to numbers.
 
 ### Phase 5 — Tests, lint, docs, deployment `[~]` (#8)
 

@@ -33,6 +33,8 @@ describe('Fediverse federation disabled (FEDIVERSE_ENABLED=false)', () => {
     ['/fediverse/user/devbog/outbox'],
     ['/nodeinfo/2.1'],
     ['/api/fediverse/articles/anything/stats'],
+    ['/api/fediverse/articles/stats?documentIds=anything'],
+    ['/api/fediverse/articles/ranking'],
   ])('serves nothing at %s', async (path) => {
     await request(strapi.server.httpServer).get(path).set('Accept', ACTIVITY_JSON).expect(404);
   });
