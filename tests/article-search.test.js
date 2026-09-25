@@ -24,11 +24,9 @@ describe('Article plain text and content search', () => {
   }
 
   async function plainTextOf(documentId, status) {
-    const row = await strapi.db
-      .query(ARTICLE_UID)
-      .findOne({
-        where: { documentId, publishedAt: status === 'draft' ? null : { $notNull: true } },
-      });
+    const row = await strapi.db.query(ARTICLE_UID).findOne({
+      where: { documentId, publishedAt: status === 'draft' ? null : { $notNull: true } },
+    });
     return row.plainText;
   }
 
@@ -196,6 +194,13 @@ describe('Article plain text and content search', () => {
     it('matches the description when content is on', async () => {
       const res = await search({ q: 'servidor pequeño', content: 'true' }).expect(200);
       expect(res.body.data[0]).toMatchObject({ matchedIn: 'description' });
+    });
+
+    it('treats % and _ in the query as literal characters, not wildcards', async () => {
+      const res = await search({ q: 'Next%loud', content: '1' }).expect(200);
+      expect(res.body.data).toEqual([]);
+      const underscore = await search({ q: 'Nextclo_d', content: '1' }).expect(200);
+      expect(underscore.body.data).toEqual([]);
     });
 
     it('filters by locale', async () => {

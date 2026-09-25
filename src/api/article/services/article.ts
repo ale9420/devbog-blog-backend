@@ -53,28 +53,27 @@ export default factories.createCoreService(ARTICLE_UID, ({ strapi }) => ({
       limit: Math.min(Math.max(1, limit), SEARCH_MAX_LIMIT),
     })) as unknown as SearchRow[];
 
-    return rows.map((row) => {
-      let matchedIn: SearchMatch = 'title';
-      let snippet: string | null = null;
+    // `$containsi` is a LIKE without escaping, so `%` and `_` in the query act as
+    // wildcards: rows that only matched through them are dropped here.
+    return rows.flatMap((row) => {
       for (const field of fields) {
-        snippet = snippetAround(row[column(field)] ?? '', term);
-        if (snippet !== null) {
-          matchedIn = field;
-          break;
-        }
+        const snippet = snippetAround(row[column(field)] ?? '', term);
+        if (snippet === null) continue;
+        return [
+          {
+            documentId: row.documentId,
+            slug: row.slug,
+            title: row.title,
+            description: row.description,
+            publishedAt: row.publishedAt,
+            locale: row.locale,
+            category: row.category ? { slug: row.category.slug, name: row.category.name } : null,
+            matchedIn: field,
+            snippet,
+          },
+        ];
       }
-
-      return {
-        documentId: row.documentId,
-        slug: row.slug,
-        title: row.title,
-        description: row.description,
-        publishedAt: row.publishedAt,
-        locale: row.locale,
-        category: row.category ? { slug: row.category.slug, name: row.category.name } : null,
-        matchedIn,
-        snippet: snippet ?? row.description ?? '',
-      };
+      return [];
     });
   },
 }));
