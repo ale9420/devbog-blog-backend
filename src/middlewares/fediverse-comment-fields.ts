@@ -62,9 +62,12 @@ export default (_config: unknown, { strapi }: { strapi: Core.Strapi }) =>
     if (ids.size === 0) return;
 
     const rows = (await strapi.db.query(COMMENT_UID).findMany({
-      select: ['id', 'fediverseUri', 'fediverseActorHandle'],
+      select: ['id', 'fediverseUri', 'fediverseActorHandle', 'blocked', 'removed'],
       where: { id: { $in: [...ids] } },
-    })) as ({ id: number } & FediverseFields)[];
+    })) as ({ id: number; blocked?: boolean | null; removed?: boolean | null } & FediverseFields)[];
 
-    attachFediverseFields(ctx.body, new Map(rows.map((row) => [row.id, row])));
+    // Blocked or removed replies keep their place in the thread, but don't
+    // point at the original note: a moderator hid it, or its author deleted it.
+    const visible = rows.filter((row) => !row.blocked && !row.removed);
+    attachFediverseFields(ctx.body, new Map(visible.map((row) => [row.id, row])));
   };

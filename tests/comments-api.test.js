@@ -63,6 +63,27 @@ describe('Public comments API', () => {
         fediverseActorHandle: '@ana@mastodon.example',
       },
     });
+    await strapi.documents(COMMENT_UID).create({
+      data: {
+        content: 'rejected from the fediverse',
+        related: relation,
+        approvalStatus: 'REJECTED',
+        fediverseUri: 'https://mastodon.example/users/ana/statuses/3',
+        fediverseActorHandle: '@ana@mastodon.example',
+      },
+    });
+    await strapi.documents(COMMENT_UID).create({
+      data: {
+        content: 'blocked by a moderator',
+        related: relation,
+        approvalStatus: 'APPROVED',
+        blocked: true,
+        authorId: 'https://mastodon.example/users/ana',
+        authorName: 'Ana',
+        fediverseUri: 'https://mastodon.example/users/ana/statuses/4',
+        fediverseActorHandle: '@ana@mastodon.example',
+      },
+    });
   });
 
   afterAll(async () => {
@@ -82,20 +103,32 @@ describe('Public comments API', () => {
   });
 
   it('exposes them on nested replies of the threaded list', async () => {
-    const [root] = await commentsAt(`/api/comments/${relation}`);
+    const root = byContent(await commentsAt(`/api/comments/${relation}`), 'from the blog');
 
-    expect(root.content).toBe('from the blog');
     expect(byContent(root.children, 'from the fediverse')).toMatchObject({
       fediverseActorHandle: '@ana@mastodon.example',
       fediverseUri: 'https://mastodon.example/users/ana/statuses/1',
     });
   });
 
-  it('keeps pending fediverse replies out of every list', async () => {
+  it('keeps pending and rejected fediverse replies out of every list', async () => {
     const flat = await commentsAt(`/api/comments/${relation}/flat`);
     const tree = await commentsAt(`/api/comments/${relation}`);
-    const all = [...flat, ...tree, ...tree.flatMap((item) => item.children ?? [])];
+    const contents = [...flat, ...tree, ...tree.flatMap((item) => item.children ?? [])].map(
+      (item) => item.content
+    );
 
-    expect(all.map((item) => item.content)).not.toContain('pending from the fediverse');
+    expect(contents).not.toContain('pending from the fediverse');
+    expect(contents).not.toContain('rejected from the fediverse');
+  });
+
+  it('does not link the original note of a blocked reply', async () => {
+    const items = await commentsAt(`/api/comments/${relation}/flat`);
+    const blocked = byContent(items, 'blocked by a moderator');
+
+    // The plugin keeps blocked comments in the list, flagged, for the thread structure.
+    expect(blocked?.blocked).toBe(true);
+    expect(blocked.fediverseUri).toBeNull();
+    expect(blocked.fediverseActorHandle).toBeNull();
   });
 });
