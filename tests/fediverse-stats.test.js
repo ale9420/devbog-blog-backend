@@ -10,6 +10,7 @@ const { setupStrapi, cleanupStrapi } = require('./strapi');
 const ARTICLE_UID = 'api::article.article';
 const COMMENT_UID = 'plugin::comments.comment';
 const FOLLOWER_UID = 'plugin::fediverse.follower';
+const CATEGORY_UID = 'api::category.category';
 
 const BLOCKED_ACTOR = 'https://spam.example/users/troll';
 
@@ -20,9 +21,14 @@ describe('Fediverse batch stats and ranking', () => {
   const get = (path, query) => request(strapi.server.httpServer).get(path).query(query);
 
   /** A published article whose published rows get a fixed `publishedAt`, so ties sort predictably. */
-  async function publishedArticle(name, publishedAt, { english = false } = {}) {
+  async function publishedArticle(name, publishedAt, { english = false, category, title } = {}) {
     const draft = await strapi.documents(ARTICLE_UID).create({
-      data: { title: `Stats ${name}`, slug: `stats-${name}`, description: 'Excerpt.' },
+      data: {
+        title: title ?? `Stats ${name}`,
+        slug: `stats-${name}`,
+        description: 'Excerpt.',
+        ...(category ? { category } : {}),
+      },
     });
     await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId });
     if (english) {
@@ -83,10 +89,28 @@ describe('Fediverse batch stats and ranking', () => {
       await locales.create({ code: 'es', name: 'Spanish (es)' });
     }
 
+    // The category migration creates the five categories on bootstrap.
+    const category = async (slug) => {
+      const found = await strapi.documents(CATEGORY_UID).findFirst({ filters: { slug } });
+      return found.documentId;
+    };
+    const ia = await category('ia');
+    const linux = await category('linux');
+
     // Default locale ('en' in tests). Totals: a = 4, b = 2, c = 2 (newer than b), d = 0 (newest).
-    articles.a = await publishedArticle('a', '2026-01-01T00:00:00.000Z');
-    articles.b = await publishedArticle('b', '2026-02-01T00:00:00.000Z');
-    articles.c = await publishedArticle('c', '2026-03-01T00:00:00.000Z');
+    // Categories: a and c are `ia`, b is `linux`, d has none.
+    articles.a = await publishedArticle('a', '2026-01-01T00:00:00.000Z', {
+      category: ia,
+      title: 'Stats a: RAG in practice',
+    });
+    articles.b = await publishedArticle('b', '2026-02-01T00:00:00.000Z', {
+      category: linux,
+      title: 'Stats b: SSH 100% hardened',
+    });
+    articles.c = await publishedArticle('c', '2026-03-01T00:00:00.000Z', {
+      category: ia,
+      title: 'Stats c: RAG evaluation',
+    });
     articles.d = await publishedArticle('d', '2026-04-01T00:00:00.000Z');
 
     await interact(articles.a, 'like');
@@ -199,6 +223,59 @@ describe('Fediverse batch stats and ranking', () => {
     it('defaults to six per page', async () => {
       const res = await get('/api/fediverse/articles/ranking').expect(200);
       expect(res.body.meta.pagination.pageSize).toBe(6);
+    });
+
+    it('narrows the ranking to a category', async () => {
+      const res = await get('/api/fediverse/articles/ranking', { category: 'ia' }).expect(200);
+      expect(res.body.data.map((row) => row.documentId)).toEqual([articles.a, articles.c]);
+      expect(res.body.meta.pagination).toEqual({ page: 1, pageSize: 6, pageCount: 1, total: 2 });
+    });
+
+    it('narrows the ranking to titles containing the search, case-insensitive', async () => {
+      const res = await get('/api/fediverse/articles/ranking', { search: 'rag' }).expect(200);
+      expect(res.body.data.map((row) => row.documentId)).toEqual([articles.a, articles.c]);
+
+      const both = await get('/api/fediverse/articles/ranking', {
+        category: 'ia',
+        search: 'evaluation',
+      }).expect(200);
+      expect(both.body.data.map((row) => row.documentId)).toEqual([articles.c]);
+      expect(both.body.meta.pagination.total).toBe(1);
+    });
+
+    it('paginates the filtered ranking', async () => {
+      const second = await get('/api/fediverse/articles/ranking', {
+        category: 'ia',
+        page: 2,
+        pageSize: 1,
+      }).expect(200);
+      expect(second.body.data.map((row) => row.documentId)).toEqual([articles.c]);
+      expect(second.body.meta.pagination).toEqual({ page: 2, pageSize: 1, pageCount: 2, total: 2 });
+    });
+
+    it('treats % and _ in the search as plain text', async () => {
+      const percent = await get('/api/fediverse/articles/ranking', { search: '100%' }).expect(200);
+      expect(percent.body.data.map((row) => row.documentId)).toEqual([articles.b]);
+
+      const wildcard = await get('/api/fediverse/articles/ranking', { search: '%%%' }).expect(200);
+      expect(wildcard.body.data).toEqual([]);
+      expect(wildcard.body.meta.pagination).toEqual({
+        page: 1,
+        pageSize: 6,
+        pageCount: 0,
+        total: 0,
+      });
+    });
+
+    it('returns an empty page for an unknown category', async () => {
+      const res = await get('/api/fediverse/articles/ranking', { category: 'nope' }).expect(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.pagination.total).toBe(0);
+    });
+
+    it('ignores searches shorter than three letters', async () => {
+      const res = await get('/api/fediverse/articles/ranking', { search: 'ra' }).expect(200);
+      expect(res.body.meta.pagination.total).toBe(4);
     });
 
     it('lists the articles published in the requested locale', async () => {

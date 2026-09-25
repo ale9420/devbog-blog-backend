@@ -118,7 +118,7 @@ All `auth: false`, aggregates only (never who interacted), and absent when `FEDI
 
 - `GET /api/fediverse/articles/:documentId/stats` → `{ likes: number, boosts: number }`, 404 for unpublished or unknown articles.
 - `GET /api/fediverse/articles/stats?documentIds=a,b,c` (at most 50, else 400) → `{ [documentId]: { likes, boosts, replies } }`. Only articles published in the default locale are included; other ids are left out. `Cache-Control: public, max-age=60`.
-- `GET /api/fediverse/articles/ranking?page=1&pageSize=6&locale=es` → `{ data: [{ documentId, likes, boosts, replies }], meta: { pagination: { page, pageSize, pageCount, total } } }`. Articles published in `locale` (default locale if omitted), ordered by `likes + boosts + replies` desc, then `publishedAt` desc; articles with no interactions come last so paging covers the whole blog. `pageSize` defaults to 6, max 50. `Cache-Control: public, max-age=60`.
+- `GET /api/fediverse/articles/ranking?page=1&pageSize=6&locale=es&category=ia&search=rag` → `{ data: [{ documentId, likes, boosts, replies }], meta: { pagination: { page, pageSize, pageCount, total } } }`. Articles published in `locale` (default locale if omitted), ordered by `likes + boosts + replies` desc, then `publishedAt` desc; articles with no interactions come last so paging covers the whole blog. `pageSize` defaults to 6, max 50. Optional filters narrow the list before ranking, so pages match the blog filters: `category` (category slug) and `search` (title contains it, case-insensitive; `%` and `_` are plain text; ignored under 3 characters). `Cache-Control: public, max-age=60`.
 
 `replies` counts approved comments with a `fediverseActorHandle` that are not removed or blocked. Blocked actors' likes, boosts and replies never count.
 

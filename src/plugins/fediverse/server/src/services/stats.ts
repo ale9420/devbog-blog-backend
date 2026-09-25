@@ -12,6 +12,7 @@ const RELATED_PREFIX = `${ARTICLE_UID}:`;
 export const BATCH_MAX_IDS = 50;
 export const RANKING_DEFAULT_PAGE_SIZE = 6;
 export const RANKING_MAX_PAGE_SIZE = 50;
+export const RANKING_SEARCH_MIN_LENGTH = 3;
 
 export interface ArticleStats {
   likes: number;
@@ -21,6 +22,16 @@ export interface ArticleStats {
 
 export interface RankedArticle extends ArticleStats {
   documentId: string;
+}
+
+export interface RankingOptions {
+  page: number;
+  pageSize: number;
+  locale?: string;
+  /** Category slug. */
+  category?: string;
+  /** Text the title must contain, case-insensitive. */
+  search?: string;
 }
 
 export interface RankingPage {
@@ -121,6 +132,36 @@ function publishedArticles(strapi: Core.Strapi, locale: string): QueryBuilder {
 const toNumber = (value: unknown) => Number(value ?? 0);
 
 /**
+ * documentIds of the articles published in `locale` that match the filters.
+ * `$containsi` is a LIKE without escaping, so rows that only matched the
+ * search through `%` or `_` are dropped, as in the article search service.
+ */
+async function filteredDocumentIds(
+  strapi: Core.Strapi,
+  locale: string,
+  { category, search }: Pick<RankingOptions, 'category' | 'search'>
+): Promise<string[]> {
+  const rows = (await strapi.db.query(ARTICLE_UID).findMany({
+    select: ['documentId', 'title'],
+    where: {
+      locale,
+      publishedAt: { $notNull: true },
+      ...(category ? { category: { slug: { $eq: category } } } : {}),
+      ...(search ? { title: { $containsi: search } } : {}),
+    },
+  })) as { documentId: string; title: string | null }[];
+
+  const term = search?.toLocaleLowerCase();
+  return [
+    ...new Set(
+      rows
+        .filter((row) => !term || (row.title ?? '').toLocaleLowerCase().includes(term))
+        .map((row) => row.documentId)
+    ),
+  ];
+}
+
+/**
  * Counts for several articles at once, keyed by documentId. Only articles
  * published in the default locale are included; any other id is left out, so
  * the response never confirms that an unpublished article exists.
@@ -165,15 +206,26 @@ export async function statsForArticles(
  * Published articles in `locale` ordered by likes + boosts + replies, newest
  * first on ties. Articles without interactions come last, so paging covers the
  * whole blog. One aggregate query per page, whatever the number of articles.
+ * `category` and `search` narrow the list before ranking, so pages stay
+ * consistent with the blog filters.
  */
 export async function rankArticles(
   strapi: Core.Strapi,
-  { page, pageSize, locale }: { page: number; pageSize: number; locale?: string }
+  { page, pageSize, locale, category, search }: RankingOptions
 ): Promise<RankingPage> {
   const knex = strapi.db.connection;
   const article = model(strapi, ARTICLE_UID);
   const resolvedLocale = locale || (await getDefaultLocale(strapi));
   const blocked = await blockedActorIds(strapi);
+  const filtered = Boolean(category || search);
+  const matching = filtered
+    ? await filteredDocumentIds(strapi, resolvedLocale, { category, search })
+    : [];
+  const articles = () => {
+    const query = publishedArticles(strapi, resolvedLocale);
+    if (filtered) query.whereIn(`article.${article.column('documentId')}`, matching);
+    return query;
+  };
 
   const documentId = `article.${article.column('documentId')}`;
   const likes = 'COALESCE(interactions.likes, 0)';
@@ -181,7 +233,7 @@ export async function rankArticles(
   const replies = 'COALESCE(replies.replies, 0)';
 
   const [rows, [{ total }]] = await Promise.all([
-    publishedArticles(strapi, resolvedLocale)
+    articles()
       .leftJoin(
         interactionCounts(strapi, blocked).as('interactions'),
         'interactions.document_id',
@@ -197,7 +249,7 @@ export async function rankArticles(
       .orderBy(`article.id`, 'desc')
       .limit(pageSize)
       .offset((page - 1) * pageSize),
-    publishedArticles(strapi, resolvedLocale).count({ total: '*' }),
+    articles().count({ total: '*' }),
   ]);
 
   const count = toNumber(total);
