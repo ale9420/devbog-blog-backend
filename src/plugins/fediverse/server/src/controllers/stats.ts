@@ -6,6 +6,7 @@ import {
   BATCH_MAX_IDS,
   RANKING_DEFAULT_PAGE_SIZE,
   RANKING_MAX_PAGE_SIZE,
+  RANKING_SEARCH_MIN_LENGTH,
   rankArticles,
   statsForArticles,
 } from '../services/stats';
@@ -25,6 +26,11 @@ interface Context {
 function positiveInt(value: unknown, fallback: number): number {
   const parsed = Number.parseInt(String(value ?? ''), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function textParam(value: unknown): string | undefined {
+  const text = typeof value === 'string' ? value.trim() : '';
+  return text || undefined;
 }
 
 /** Public fediverse counts for the frontend. Only aggregates; never who interacted. */
@@ -65,9 +71,11 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     ctx.body = await statsForArticles(strapi, ids);
   },
 
-  /** GET /articles/ranking?page=1&pageSize=6&locale=es */
+  /** GET /articles/ranking?page=1&pageSize=6&locale=es&category=ia&search=rag */
   async ranking(ctx: Context) {
     const locale = typeof ctx.query.locale === 'string' ? ctx.query.locale : undefined;
+    const category = textParam(ctx.query.category);
+    const search = textParam(ctx.query.search);
     const page = positiveInt(ctx.query.page, 1);
     const pageSize = Math.min(
       positiveInt(ctx.query.pageSize, RANKING_DEFAULT_PAGE_SIZE),
@@ -75,6 +83,12 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     );
 
     ctx.set('Cache-Control', CACHE_CONTROL);
-    ctx.body = await rankArticles(strapi, { page, pageSize, locale });
+    ctx.body = await rankArticles(strapi, {
+      page,
+      pageSize,
+      locale,
+      category,
+      search: search && search.length >= RANKING_SEARCH_MIN_LENGTH ? search : undefined,
+    });
   },
 });
