@@ -81,6 +81,14 @@ GET /api/articles?locale=en&filters[category][key][$eq]=privacidad
 
 Categories are localized: `name` and `description` change with `locale` (`es` is the default), while `slug`, `key`, `bird`, `pillar` and `order` are shared by every locale. An article populates the category row of its own locale. Categories outside the redesign have `key` and `order` set to `null` and may exist only in Spanish.
 
+Reading path: each category has an ordered list of articles, chosen by the editor rather than by date. An article's `pathOrder` (integer ≥ 1, shared by every locale) is its position on its category's path; articles with `pathOrder` set to `null` are not on it. Filter by the category and sort by the position:
+
+```http
+GET /api/articles?locale=es&filters[category][key][$eq]=privacidad&filters[pathOrder][$notNull]=true&sort=pathOrder:asc
+```
+
+"N of M read" takes M from `meta.pagination.total`; which ones are read is tracked by the frontend.
+
 Pagination (`config/api.ts` sets `defaultLimit: 25`, `maxLimit: 100`):
 
 ```http

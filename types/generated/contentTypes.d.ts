@@ -500,6 +500,18 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
       }>;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::article.article'>;
+    pathOrder: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     plainText: Schema.Attribute.Text &
       Schema.Attribute.Private &
       Schema.Attribute.SetPluginOptions<{
