@@ -35,64 +35,270 @@
     },
     "blocks": [
       {
-        "__component": "shared.hero",
-        "title": "Alejandro",
-        "subtitle": "Software developer based in Bogota, Colombia"
+        "eyebrow": "About · field card",
+        "title": "Hi, I'm Alejandro.",
+        "lead": "I write about software development, open source and technology.",
+        "plateLabel": "PL. 01",
+        "plateCoordinates": "4.61°N 74.08°W",
+        "caption": "Rufous-collared sparrow · Zonotrichia capensis · blog mascot",
+        "facts": [
+          {
+            "label": "Name",
+            "value": "Alejandro Ramírez",
+            "mono": false
+          },
+          {
+            "label": "Habitat",
+            "value": "Bogotá, Colombia · 2,640 m above sea level",
+            "mono": false
+          },
+          {
+            "label": "Specialty",
+            "value": "React, Next.js and React Native · frontend architecture",
+            "mono": false
+          },
+          {
+            "label": "Call",
+            "value": "@devbog@api.bogdev.com.co",
+            "mono": true
+          }
+        ],
+        "links": [
+          {
+            "label": "Read the blog",
+            "url": "/blog",
+            "variant": "primary"
+          },
+          {
+            "label": "See projects",
+            "url": "#projects",
+            "variant": "secondary"
+          }
+        ],
+        "__component": "about.profile"
       },
       {
-        "__component": "shared.rich-text",
-        "body": "Welcome to my blog! I'm a software developer passionate about building great software, exploring new technologies, and sharing what I learn along the way.\n\n## Background\n\nI'm based in Bogota, Colombia, and I've been working in software development for several years. I enjoy working across the full stack, from crafting clean user interfaces to designing robust backend systems."
+        "eyebrow": "Who writes",
+        "statement": "I'm a Colombian software developer who loves building things that matter.",
+        "body": "This blog is my corner of the internet where I share what I learn. I believe teaching is the best way to learn, and that quality technical content in Spanish deserves more room.",
+        "__component": "about.statement"
       },
       {
-        "__component": "shared.topic-card",
-        "title": "Artificial Intelligence",
-        "description": "Exploring machine learning, LLMs, and how AI is transforming software development.",
-        "icon": "cpu-chip"
+        "eyebrow": "What I write about",
+        "title": "Five topics, five birds of the savanna",
+        "intro": "Each topic on the blog takes its color from a bird of Bogotá. Privacy and DIY are the pillars; everything else grows around them.",
+        "footnoteLabel": "Also, in every topic:",
+        "footnote": "Hands-on tutorials, with examples you can copy, try and adapt",
+        "topics": [
+          {
+            "category": "privacidad",
+            "title": "Privacy",
+            "description": "Digital sovereignty, self-hosting and tools to look after your data. Like the masked flowerpiercer: see without being seen."
+          },
+          {
+            "category": "diy",
+            "title": "Do it yourself",
+            "description": "Home labs, hardware and projects built at home. Like the swallow, which builds its nest with whatever it finds."
+          },
+          {
+            "category": "ia",
+            "title": "Artificial intelligence",
+            "description": "Language models, RAG and how to connect them to your own data, without depending on anyone."
+          },
+          {
+            "category": "software",
+            "title": "Software development",
+            "description": "I build apps with React, Next.js and React Native. I write about frontend architecture, performance and accessibility, and about the road code travels to production."
+          },
+          {
+            "category": "linux",
+            "title": "Linux and open source",
+            "description": "Free software as a philosophy of transparency and collaboration. Sharing what I learn and keeping the code open is my way of giving back."
+          }
+        ],
+        "__component": "about.topics"
       },
       {
-        "__component": "shared.topic-card",
-        "title": "Software Development",
-        "description": "Clean code, architecture patterns, and building maintainable applications.",
-        "icon": "code-bracket"
+        "anchor": "projects",
+        "eyebrow": "Projects",
+        "title": "What I've built",
+        "intro": "All the code behind this blog is open: backend, frontend and now its place in the fediverse.",
+        "projects": [
+          {
+            "eyebrow": "Featured project",
+            "meta": "Backend · 2026",
+            "title": "BogDev on the fediverse",
+            "description": "An ActivityPub plugin built with Fedify inside Strapi 5. The blog has its own account, articles reach Mastodon when they're published, and replies, likes and boosts come back to the blog as moderated comments and counters.",
+            "featured": true,
+            "visual": "fediverse",
+            "visualCaption": "ActivityPub · @devbog@api.bogdev.com.co",
+            "facts": [
+              {
+                "label": "Stack",
+                "value": "Fedify · Strapi 5 · Koa · PostgreSQL",
+                "mono": false
+              },
+              {
+                "label": "Scope",
+                "value": "Follow, publish, reply, likes and boosts",
+                "mono": false
+              },
+              {
+                "label": "Tests",
+                "value": "Full suite on SQLite and PostgreSQL",
+                "mono": false
+              }
+            ],
+            "stack": [],
+            "links": [
+              {
+                "label": "See repository",
+                "url": "https://github.com/ale9420/devbog-blog-backend",
+                "variant": "primary"
+              },
+              {
+                "label": "Read the docs",
+                "url": "https://github.com/ale9420/devbog-blog-backend/blob/main/docs/FEDIVERSE.md",
+                "variant": "text"
+              }
+            ]
+          },
+          {
+            "eyebrow": "Frontend",
+            "meta": "Open source",
+            "title": "BogDev blog",
+            "description": "The site you're reading: Nuxt 4 and Vue 3, in Spanish and English, with search, comments, a double opt-in newsletter and RSS.",
+            "featured": false,
+            "visual": "none",
+            "facts": [],
+            "stack": [
+              {
+                "name": "Nuxt 4"
+              },
+              {
+                "name": "Vue 3"
+              },
+              {
+                "name": "Nuxt UI"
+              },
+              {
+                "name": "i18n"
+              },
+              {
+                "name": "Vitest"
+              },
+              {
+                "name": "Playwright"
+              }
+            ],
+            "links": [
+              {
+                "label": "See repository",
+                "url": "https://github.com/ale9420/devbog-blog-front",
+                "variant": "text"
+              }
+            ]
+          },
+          {
+            "eyebrow": "Design",
+            "meta": "In progress",
+            "title": "BogDev design system",
+            "description": "Tokens with two themes, Páramo Night and Salmona Day, five categories colored after birds of Bogotá, and seven React components.",
+            "featured": false,
+            "visual": "palette",
+            "facts": [],
+            "stack": [],
+            "links": []
+          }
+        ],
+        "__component": "about.projects"
       },
       {
-        "__component": "shared.topic-card",
-        "title": "Linux & Open Source",
-        "description": "Linux systems, open source contributions, and the philosophy behind free software.",
-        "icon": "command-line"
+        "eyebrow": "What I believe",
+        "title": "Five principles",
+        "principles": [
+          {
+            "title": "Free software",
+            "text": "This is one of the pillars of this blog. I believe open source is not just a license: it's a philosophy of transparency, collaboration and technological sovereignty."
+          },
+          {
+            "title": "Community over competition",
+            "text": "The best part of this industry is the people who share without expecting anything in return."
+          },
+          {
+            "title": "Learning in public",
+            "text": "Writing forces me to understand. Teaching forces me to go deeper."
+          },
+          {
+            "title": "Simple and clear",
+            "text": "Complexity is inevitable; confusion is optional."
+          },
+          {
+            "title": "Iterate without fear",
+            "text": "Everything you see here is a work in progress."
+          }
+        ],
+        "__component": "about.principles"
       },
       {
-        "__component": "shared.topic-card",
-        "title": "DevOps & Cloud",
-        "description": "Containerization, CI/CD pipelines, cloud infrastructure, and deployment strategies.",
-        "icon": "cloud"
+        "eyebrow": "This blog is open source",
+        "text": "This blog is built entirely with free tools. All the code, both backend and frontend, is on GitHub if you want to look around, learn or contribute.",
+        "code": "$ git clone https://github.com/ale9420/devbog-blog-front\n$ git clone https://github.com/ale9420/devbog-blog-backend",
+        "guideTitle": "How to get around",
+        "guide": [
+          {
+            "text": "Use [search](#search) if you have something specific in mind."
+          },
+          {
+            "text": "Browse by [topics](/blog) to discover things you didn't know you were into."
+          },
+          {
+            "text": "Comments are open. You don't need to agree to join in."
+          },
+          {
+            "text": "Subscribe to the [newsletter](/#newsletter) if you'd rather get posts in your inbox."
+          }
+        ],
+        "__component": "about.open-source"
       },
       {
-        "__component": "shared.social-links",
-        "title": "Connect",
-        "description": "Feel free to reach out or follow me on social media.",
-        "linkedin": "https://linkedin.com/in/ale9420",
-        "github": "https://github.com/ale9420",
-        "codeberg": "https://codeberg.org/ale9420",
-        "mastodon": "https://mastodon.social/@ale9420"
-      },
-      {
-        "__component": "shared.tech-stack",
-        "title": "Tech Stack",
-        "technologies": [
-          { "name": "Vue.js" },
-          { "name": "Nuxt" },
-          { "name": "TypeScript" },
-          { "name": "Node.js" },
-          { "name": "Flutter" },
-          { "name": "Docker" },
-          { "name": "NGINX" },
-          { "name": "Linux" },
-          { "name": "PostgreSQL" },
-          { "name": "Strapi" },
-          { "name": "Tailwind CSS" },
-          { "name": "Git" }
-        ]
+        "eyebrow": "Find me online",
+        "title": "Let's talk.",
+        "fediverseLabel": "The blog on the fediverse",
+        "fediverseHandle": "@devbog@api.bogdev.com.co",
+        "fediverseLink": {
+          "label": "How to follow it",
+          "url": "/#fediverso",
+          "variant": "text"
+        },
+        "extraLink": {
+          "label": "Buy me a coffee",
+          "url": "https://www.buymeacoffee.com/ale9420",
+          "variant": "text"
+        },
+        "socials": [
+          {
+            "network": "LinkedIn",
+            "handle": "in/alejandro-ramirez-garcia",
+            "url": "https://www.linkedin.com/in/alejandro-ramirez-garcia-046713139"
+          },
+          {
+            "network": "GitHub",
+            "handle": "@ale9420",
+            "url": "https://github.com/ale9420"
+          },
+          {
+            "network": "Codeberg",
+            "handle": "@alejo9420",
+            "url": "https://codeberg.org/alejo9420"
+          },
+          {
+            "network": "Mastodon",
+            "handle": "@ale9420@mastodon.social",
+            "url": "https://mastodon.social/@ale9420"
+          }
+        ],
+        "__component": "about.contact"
       }
     ]
   },

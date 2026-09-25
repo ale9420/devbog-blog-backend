@@ -421,14 +421,10 @@ export interface ApiAboutAbout extends Struct.SingleTypeSchema {
         'about.principles',
         'about.open-source',
         'about.contact',
-        'shared.hero',
         'shared.rich-text',
         'shared.quote',
         'shared.media',
         'shared.slider',
-        'shared.topic-card',
-        'shared.social-links',
-        'shared.tech-stack',
       ]
     > &
       Schema.Attribute.SetPluginOptions<{
