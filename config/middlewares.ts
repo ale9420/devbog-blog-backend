@@ -35,6 +35,8 @@ const config: Core.Config.Middlewares = [
   'strapi::session',
   'strapi::favicon',
   'strapi::public',
+  // Outer to hide-unapproved-comments, so it only enriches what survives pruning.
+  'global::fediverse-comment-fields',
   'global::hide-unapproved-comments',
 ];
 
