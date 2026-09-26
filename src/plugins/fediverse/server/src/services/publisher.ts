@@ -68,12 +68,14 @@ async function onPublish(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
 
   // Publishing again is how edits go live in Strapi 5, so a known article is an Update.
   const federated = await isFederated(strapi, documentId);
+  // Marked before delivering: an unpublish that lands mid-delivery, or a
+  // delivery that fails for one follower, must still end in a Delete.
+  if (!federated) await setFederated(strapi, documentId, true);
   const ctx = createContext(strapi);
   const recipients = await sendToFollowers(
     strapi,
     buildArticleActivity(federated ? 'update' : 'create', ctx, ACTOR_IDENTIFIER, record)
   );
-  await setFederated(strapi, documentId, true);
   strapi.log.info(
     `[fediverse] ${federated ? 'Update' : 'Create'}(Article) for ${documentId} (${record.slug}): ${describeDelivery(recipients)}`
   );
