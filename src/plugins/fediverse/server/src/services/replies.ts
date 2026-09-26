@@ -43,14 +43,19 @@ export function htmlToPlainText(html: string): string {
     .trim();
 }
 
-/** Mastodon prefixes replies with a mention of the account being replied to; drop ours. */
-export function stripLeadingMentions(text: string, actorIdentifier: string): string {
-  const escaped = actorIdentifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(new RegExp(`^(?:@${escaped}(?:@[\\w.-]+)?\\s+)+`, 'i'), '').trim();
+/**
+ * Mastodon prefixes replies with a mention of the account being replied to;
+ * drop ours, under any of the usernames the blog answers to.
+ */
+export function stripLeadingMentions(text: string, usernames: string | string[]): string {
+  const names = (Array.isArray(usernames) ? usernames : [usernames])
+    .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|');
+  return text.replace(new RegExp(`^(?:@(?:${names})(?:@[\\w.-]+)?\\s+)+`, 'i'), '').trim();
 }
 
-export function toCommentContent(html: string, actorIdentifier: string): string {
-  return stripLeadingMentions(htmlToPlainText(html), actorIdentifier).slice(0, MAX_CONTENT_LENGTH);
+export function toCommentContent(html: string, usernames: string | string[]): string {
+  return stripLeadingMentions(htmlToPlainText(html), usernames).slice(0, MAX_CONTENT_LENGTH);
 }
 
 export interface IncomingReply {
@@ -66,7 +71,8 @@ export interface IncomingReply {
 }
 
 export interface ReplyContext {
-  actorIdentifier: string;
+  /** Usernames the blog is mentioned by: its current handle and any former one. */
+  actorUsernames: string[];
   /** Maps one of our ActivityPub article ids to its documentId, or null. */
   parseArticleUri(uri: string): string | null;
 }
@@ -142,7 +148,7 @@ export async function ingestReply(
     return ignored('article is not published');
   }
 
-  const content = toCommentContent(reply.contentHtml, context.actorIdentifier);
+  const content = toCommentContent(reply.contentHtml, context.actorUsernames);
   if (!content) return ignored('empty after sanitizing');
 
   const created = (await comments(strapi).create({
@@ -176,7 +182,7 @@ export async function updateReply(
   if (!comment) return ignored('unknown reply');
   if (comment.authorId !== update.actorId) return ignored('not the reply author');
 
-  const content = toCommentContent(update.contentHtml, context.actorIdentifier);
+  const content = toCommentContent(update.contentHtml, context.actorUsernames);
   if (!content) return ignored('empty after sanitizing');
   if (content === comment.content) return ignored('content unchanged');
 

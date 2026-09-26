@@ -329,7 +329,8 @@ FEDIVERSE_ENABLED=true
 URL=https://api.bogdev.com.co
 
 # Optional (defaults shown)
-FEDIVERSE_ACTOR_IDENTIFIER=devbog        # the @user part; changing it later breaks existing follows
+FEDIVERSE_ACTOR_USERNAME=bogdev          # the @user part of the handle; safe to change (WebFinger maps it)
+FEDIVERSE_ACTOR_IDENTIFIER=devbog        # path of the actor URI; never change it, remote follows are keyed by it
 FRONTEND_URL=https://bogdev.com.co       # origin of the article links inside federated posts
 FRONTEND_ARTICLE_PATH=/blog/{slug}       # article path template
 FRONTEND_DEFAULT_LOCALE=en               # locale the frontend serves without a URL prefix
@@ -352,8 +353,8 @@ Requirements that are easy to miss:
 4. Verify from outside:
    ```bash
    curl -s https://api.bogdev.com.co/_health -o /dev/null -w '%{http_code}\n'      # 204
-   npx @fedify/cli webfinger @devbog@api.bogdev.com.co                                # 200, https links
-   npx @fedify/cli lookup @devbog@api.bogdev.com.co                                    # actor with inbox, outbox, publicKey
+   npx @fedify/cli webfinger @bogdev@api.bogdev.com.co                                # 200, https links
+   npx @fedify/cli lookup @bogdev@api.bogdev.com.co                                    # actor with inbox, outbox, publicKey
    ```
 5. Follow the actor from a Mastodon account, publish an article, and watch the app logs for `[fediverse]` lines (each fan-out reports how many followers it reached).
 

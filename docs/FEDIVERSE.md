@@ -21,15 +21,15 @@ This document is the source of truth for connecting the BogDev blog backend to t
 
 ## Goal & Decisions
 
-| Decision         | Choice                                                                                                            |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Architecture     | **Fedify embedded in Strapi** as a local plugin — no sidecar service, single deploy unit                          |
-| Protocol library | [`@fedify/fedify`](https://fedify.dev) + `@fedify/koa` Koa middleware (same stack Ghost uses for its ActivityPub) |
-| Actor domain     | `api.bogdev.com.co` → handle `@devbog@api.bogdev.com.co` (served directly by Strapi; no reverse-proxy changes)    |
-| Actor identity   | Single blog actor (not per-author)                                                                                |
-| Replies storage  | Existing `strapi-plugin-comments` collection, entering as `PENDING` for the existing approval workflow            |
-| MVP scope        | Follow + article federation + replies-as-comments **plus likes & boosts**                                         |
-| i18n             | MVP federates the default locale only                                                                             |
+| Decision         | Choice                                                                                                                              |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture     | **Fedify embedded in Strapi** as a local plugin — no sidecar service, single deploy unit                                            |
+| Protocol library | [`@fedify/fedify`](https://fedify.dev) + `@fedify/koa` Koa middleware (same stack Ghost uses for its ActivityPub)                   |
+| Actor domain     | `api.bogdev.com.co` → handle `@bogdev@api.bogdev.com.co` (formerly `@devbog`) (served directly by Strapi; no reverse-proxy changes) |
+| Actor identity   | Single blog actor (not per-author)                                                                                                  |
+| Replies storage  | Existing `strapi-plugin-comments` collection, entering as `PENDING` for the existing approval workflow                              |
+| MVP scope        | Follow + article federation + replies-as-comments **plus likes & boosts**                                                           |
+| i18n             | MVP federates the default locale only                                                                                               |
 
 Rejected alternatives (for context):
 
@@ -134,7 +134,8 @@ All `auth: false`, aggregates only (never who interacted), and absent when `FEDI
 | ---------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `FEDIVERSE_ENABLED`          | `false`                 | Master switch (enable explicitly, e.g. staging before prod)                                                                                                                                              |
 | `URL` _(Strapi's own)_       | `http://localhost:1337` | **Must be the public origin** (e.g. `https://api.bogdev.com.co`). Fan-out runs outside any request and builds every activity id from it; a wrong value makes ids disagree with the ones served over HTTP |
-| `FEDIVERSE_ACTOR_IDENTIFIER` | `devbog`                | Actor username → `@devbog@api.bogdev.com.co`                                                                                                                                                             |
+| `FEDIVERSE_ACTOR_USERNAME`   | `bogdev`                | The handle's `@user` (`preferredUsername`) → `@bogdev@api.bogdev.com.co`. Safe to change: WebFinger maps it (and the identifier, as a former handle) to the actor                                        |
+| `FEDIVERSE_ACTOR_IDENTIFIER` | `devbog`                | Path of the actor URI (`/fediverse/user/devbog`). Never change it: remote servers key the account and its followers by that URI                                                                          |
 | `FEDIVERSE_ACTOR_NAME`       | _(unset)_               | Actor display name fallback, used only when `global.siteName` is empty                                                                                                                                   |
 | `FEDIVERSE_ACTOR_SUMMARY`    | _(unset)_               | Actor bio fallback, used only when `global.siteDescription` is empty                                                                                                                                     |
 | `FEDIVERSE_ACTOR_SOURCE_URL` | backend GitHub repo     | Link shown in the "Código" profile field                                                                                                                                                                 |
@@ -152,7 +153,7 @@ Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** �
 
 ### 1. Follow
 
-1. Remote user searches `@devbog@api.bogdev.com.co` → WebFinger resolves → actor profile shown.
+1. Remote user searches `@bogdev@api.bogdev.com.co` → WebFinger resolves → actor profile shown.
 2. Inbox receives `Follow` → create `fediverse-follower` row → auto-send signed `Accept`.
 3. `Undo(Follow)` or incoming `Block` → remove follower. Admin sets `blocked: true` → excluded from fan-out, their activities ignored.
 
@@ -311,7 +312,7 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **Comment `related` is `api::article.article:<documentId>`** (not the numeric id), and `threadOf` is set through the document service by the parent's `documentId`.
 - **Author mapping:** `authorId` = remote actor URI (stable identity), `authorName` = actor name or `preferredUsername`, `authorAvatar` = actor icon, `fediverseActorHandle` = `@user@host`. `authorEmail` is deliberately never set: the plugin exposes it publicly.
 - **Threading is one hop.** A reply to a stored fediverse reply attaches to it via `threadOf`; a reply to something we don't know is ignored (not our conversation), not attached as top-level.
-- **Sanitization order:** tags are stripped first (keeping `<br>`/paragraph breaks), entities decoded after, so an encoded `&lt;script&gt;` ends up as literal text, never markup. The frontend renders comments as text (no `v-html`). Mastodon's leading `@devbog` mention is stripped; content is capped at 5000 characters.
+- **Sanitization order:** tags are stripped first (keeping `<br>`/paragraph breaks), entities decoded after, so an encoded `&lt;script&gt;` ends up as literal text, never markup. The frontend renders comments as text (no `v-html`). Mastodon's leading `@bogdev` mention (or the former `@devbog`) is stripped; content is capped at 5000 characters.
 - **Authorship is checked.** A `Note` whose `attributedTo` differs from the signature-verified activity actor is dropped, and edits/deletes are only honoured from the original author.
 
 ### Phase 4 — Likes & boosts `[x]` (#7)
@@ -358,6 +359,7 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - **CI scope.** `.github/workflows/ci.yml` runs only for pull requests to and pushes on `main`; `develop` pushes deploy to staging without running it. The `develop` → `main` pull request is where CI gates this work, and it does not run the Postgres variant of the suite.
 - **Production incident: the Fedify middleware stalled large request bodies (found the day it was enabled).** `@fedify/koa` turns the Node request stream of every non-GET request into a web stream _before_ deciding whether the route is its own. That stream pauses the shared Node stream once its queue fills (bodies of roughly 16 KB on Node 20, 64 KB on Node 24), and because the middleware runs ahead of `strapi::body` nobody drains it, so any large POST/PUT elsewhere in the app hung until the client aborted — publishing a long article in the admin was the first to show it (`request aborted` in `raw-body`, a 2-minute request). Small bodies were fine, which is why staging, the tests and every earlier check missed it. `mountFediverseMiddleware` now only runs Fedify for `/fediverse/*`, `/.well-known/*` and `/nodeinfo/*`; `tests/fediverse.test.js` posts a 512 KB body to a non-federation route (the test times out without the fix). Lesson: a global middleware that touches the request stream needs a large-body test on an unrelated route.
 - **NodeInfo** reports `localComments: 0` unconditionally; making it a real count is a possible refinement.
+- **Handle change `@devbog` → `@bogdev` (2026-09-26) without losing followers.** The handle's `@user` (`preferredUsername`, `FEDIVERSE_ACTOR_USERNAME`) is now separate from the actor identifier (`FEDIVERSE_ACTOR_IDENTIFIER`, the URI path), and the actor dispatcher sets Fedify's `mapHandle`, so WebFinger resolves `acct:bogdev@…` — and the former `acct:devbog@…` — to the unchanged `/fediverse/user/devbog`. Remote servers key accounts by URI, so follows and already-federated posts keep working; Mastodon shows the new handle once it refetches the actor (it re-verifies `preferredUsername` through WebFinger). Renaming the identifier instead would have orphaned every follow.
 
 ---
 
@@ -368,7 +370,7 @@ Tracked as GitHub issues under the `fediverse-federation` milestone. Check off a
 - `fediverse:creator` author attribution
 - Admin UI panel in Strapi admin
 - Postgres/Redis KV upgrade
-- WebFinger on the frontend domain (`@devbog@bogdev.com.co`) via Dokploy proxy
+- WebFinger on the frontend domain (`@bogdev@bogdev.com.co`) via Dokploy proxy
 - Fediverse relay submission for reach beyond direct followers
 
 ---

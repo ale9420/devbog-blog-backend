@@ -55,7 +55,22 @@ export type FediverseContextData = {
   strapi: Core.Strapi;
 };
 
+/**
+ * The actor's internal identifier: the path segment of every actor URI
+ * (`/fediverse/user/devbog`). Remote servers key the account and its
+ * followers by that URI, so it must never change.
+ */
 export const ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER ?? 'devbog';
+
+/**
+ * The `user` of the public handle `@user@domain` (`preferredUsername`).
+ * Unlike the identifier it can change: WebFinger maps it to the identifier,
+ * so the account keeps its URI and followers.
+ */
+export const ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME ?? 'bogdev';
+
+/** Usernames WebFinger resolves to the blog: the handle, and the identifier as a former one. */
+export const ACTOR_USERNAMES = [...new Set([ACTOR_USERNAME, ACTOR_IDENTIFIER])];
 
 export const ACTOR_PATH = '/fediverse/user/{identifier}';
 export const INBOX_PATH = '/fediverse/user/{identifier}/inbox';
@@ -94,7 +109,7 @@ function replyContext(ctx: {
   parseUri(uri: URL): { type: string; class?: unknown; values?: Record<string, string> } | null;
 }): ReplyContext {
   return {
-    actorIdentifier: ACTOR_IDENTIFIER,
+    actorUsernames: ACTOR_USERNAMES,
     parseArticleUri(uri) {
       try {
         const parsed = ctx.parseUri(new URL(uri));
@@ -209,7 +224,7 @@ export async function buildActor(
 
   return new Person({
     id: actorUri,
-    preferredUsername: identifier,
+    preferredUsername: identifier === ACTOR_IDENTIFIER ? ACTOR_USERNAME : identifier,
     name: profile.name,
     summary: profile.summary,
     url: new URL(profile.url),
@@ -247,6 +262,9 @@ export function createFediverseFederation(log?: Logger): Federation<FediverseCon
       if (identifier !== ACTOR_IDENTIFIER) return null;
       return buildActor(ctx, identifier);
     })
+    .mapHandle((_ctx, username) =>
+      ACTOR_USERNAMES.includes(username.toLowerCase()) ? ACTOR_IDENTIFIER : null
+    )
     .setKeyPairsDispatcher(async (context, identifier) => {
       if (identifier !== ACTOR_IDENTIFIER) return [];
       // Keys are persisted as JWKs in the plugin store; Fedify derives the

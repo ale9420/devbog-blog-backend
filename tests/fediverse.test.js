@@ -38,17 +38,35 @@ describe('Fediverse federation (Phase 0 spike)', () => {
     expect(typeof strapi.plugin('fediverse').service('lifecycle').getEvents).toBe('function');
   });
 
-  it('GET /.well-known/webfinger resolves the blog actor', async () => {
+  it('GET /.well-known/webfinger resolves the blog handle to the actor', async () => {
     const res = await request(strapi.server.httpServer)
       .get('/.well-known/webfinger')
-      .query({ resource: `acct:devbog@${host}` })
+      .query({ resource: `acct:bogdev@${host}` })
       .expect(200)
       .expect('Content-Type', /json/);
 
-    expect(res.body.subject).toBe(`acct:devbog@${host}`);
+    expect(res.body.subject).toBe(`acct:bogdev@${host}`);
     const selfLink = res.body.links.find((link) => link.rel === 'self');
     expect(selfLink.type).toBe(ACTIVITY_JSON);
+    // The handle changed from @devbog; the actor URI (and its followers) did not.
     expect(selfLink.href.endsWith('/fediverse/user/devbog')).toBe(true);
+  });
+
+  it('GET /.well-known/webfinger still resolves the former handle to the same actor', async () => {
+    const res = await request(strapi.server.httpServer)
+      .get('/.well-known/webfinger')
+      .query({ resource: `acct:devbog@${host}` })
+      .expect(200);
+
+    const selfLink = res.body.links.find((link) => link.rel === 'self');
+    expect(selfLink.href.endsWith('/fediverse/user/devbog')).toBe(true);
+  });
+
+  it('GET /.well-known/webfinger does not resolve other usernames', async () => {
+    await request(strapi.server.httpServer)
+      .get('/.well-known/webfinger')
+      .query({ resource: `acct:someone@${host}` })
+      .expect(404);
   });
 
   it('GET /fediverse/user/devbog serves an ActivityPub Person document', async () => {
@@ -59,7 +77,7 @@ describe('Fediverse federation (Phase 0 spike)', () => {
 
     expect(res.body.type).toBe('Person');
     expect(res.body.id.endsWith('/fediverse/user/devbog')).toBe(true);
-    expect(res.body.preferredUsername).toBe('devbog');
+    expect(res.body.preferredUsername).toBe('bogdev');
     expect(res.body.inbox.endsWith('/fediverse/user/devbog/inbox')).toBe(true);
     // The actor must advertise a verification key (Mastodon requirement).
     const keys = res.body.assertionMethod ?? res.body.publicKey;
