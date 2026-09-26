@@ -210,6 +210,40 @@ export interface AboutTopics extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedImageCredit extends Struct.ComponentSchema {
+  collectionName: 'components_shared_image_credits';
+  info: {
+    description: 'Who made an image, where it comes from and under which license';
+    displayName: 'Image credit';
+    icon: 'picture';
+  };
+  attributes: {
+    author: Schema.Attribute.String;
+    authorUrl: Schema.Attribute.String;
+    kind: Schema.Attribute.Enumeration<['photo', 'illustration', 'diagram', 'screenshot']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'photo'>;
+    license: Schema.Attribute.Enumeration<
+      [
+        'own-work',
+        'cc0',
+        'public-domain',
+        'cc-by-4.0',
+        'cc-by-sa-4.0',
+        'cc-by-nc-4.0',
+        'unsplash',
+        'permission',
+        'other',
+      ]
+    > &
+      Schema.Attribute.Required;
+    licenseUrl: Schema.Attribute.String;
+    modifications: Schema.Attribute.String;
+    source: Schema.Attribute.String;
+    sourceUrl: Schema.Attribute.String;
+  };
+}
+
 export interface SharedMedia extends Struct.ComponentSchema {
   collectionName: 'components_shared_media';
   info: {
@@ -217,6 +251,8 @@ export interface SharedMedia extends Struct.ComponentSchema {
     icon: 'file-video';
   };
   attributes: {
+    caption: Schema.Attribute.Text;
+    credit: Schema.Attribute.Component<'shared.image-credit', false>;
     file: Schema.Attribute.Media<'images' | 'files' | 'videos'>;
   };
 }
@@ -254,6 +290,54 @@ export interface SharedQuote extends Struct.ComponentSchema {
   attributes: {
     body: Schema.Attribute.Text;
     title: Schema.Attribute.String;
+  };
+}
+
+export interface SharedReference extends Struct.ComponentSchema {
+  collectionName: 'components_shared_references';
+  info: {
+    description: 'A bibliographic source, cited in the body as [@key]';
+    displayName: 'Reference';
+    icon: 'book';
+  };
+  attributes: {
+    accessedAt: Schema.Attribute.Date;
+    authors: Schema.Attribute.Text & Schema.Attribute.Required;
+    container: Schema.Attribute.String;
+    doi: Schema.Attribute.String;
+    issue: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 32;
+      }>;
+    key: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64;
+      }>;
+    pages: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 32;
+      }>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    type: Schema.Attribute.Enumeration<
+      ['journal', 'conference', 'preprint', 'book', 'chapter', 'web', 'software', 'docs']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'journal'>;
+    url: Schema.Attribute.String;
+    venueLabel: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 80;
+      }>;
+    volume: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 32;
+      }>;
+    year: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 16;
+      }>;
   };
 }
 
@@ -298,6 +382,20 @@ export interface SharedSeo extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedSlide extends Struct.ComponentSchema {
+  collectionName: 'components_shared_slides';
+  info: {
+    description: 'One image of a slider, with its own caption and credit';
+    displayName: 'Slide';
+    icon: 'picture';
+  };
+  attributes: {
+    caption: Schema.Attribute.Text;
+    credit: Schema.Attribute.Component<'shared.image-credit', false>;
+    file: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
+  };
+}
+
 export interface SharedSlider extends Struct.ComponentSchema {
   collectionName: 'components_shared_sliders';
   info: {
@@ -307,6 +405,7 @@ export interface SharedSlider extends Struct.ComponentSchema {
   };
   attributes: {
     files: Schema.Attribute.Media<'images', true>;
+    items: Schema.Attribute.Component<'shared.slide', true>;
   };
 }
 
@@ -338,11 +437,14 @@ declare module '@strapi/strapi' {
       'about.statement': AboutStatement;
       'about.topic': AboutTopic;
       'about.topics': AboutTopics;
+      'shared.image-credit': SharedImageCredit;
       'shared.media': SharedMedia;
       'shared.meta-social': SharedMetaSocial;
       'shared.quote': SharedQuote;
+      'shared.reference': SharedReference;
       'shared.rich-text': SharedRichText;
       'shared.seo': SharedSeo;
+      'shared.slide': SharedSlide;
       'shared.slider': SharedSlider;
       'shared.tech-item': SharedTechItem;
     }

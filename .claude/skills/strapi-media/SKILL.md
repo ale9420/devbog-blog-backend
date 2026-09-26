@@ -72,10 +72,13 @@ Example avatar field on `author`:
 
 ## Shared media components
 
-- `shared.media` — single file, intended for one image/video.
-- `shared.slider` — multiple files, intended for galleries.
+- `shared.media` — single file, intended for one image/video, with a per-use `caption` and `credit`.
+- `shared.slider` — gallery. `items` (repeatable `shared.slide`: `file`, `caption`, `credit`) gives each image its own caption and credit. `files` is legacy: at bootstrap `src/migrations/slider-items.ts` copies a slider's `files` into `items` when it has files and no items (idempotent, `files` kept).
+- `shared.image-credit` — who made an image and under which license: `kind` (`photo` | `illustration` | `diagram` | `screenshot`), `author`, `authorUrl`, `source`, `sourceUrl`, `license` (`own-work` | `cc0` | `public-domain` | `cc-by-4.0` | `cc-by-sa-4.0` | `cc-by-nc-4.0` | `unsplash` | `permission` | `other`), `licenseUrl` (for `other`), `modifications`. Also on the article cover as `coverCredit`.
 
-When seeding or querying dynamic zones, populate the nested `file` field so consumers get real URLs.
+Credits are per use, not per file: the Media Library's own `caption`/`alternativeText` belong to the file and can't take custom fields. Saving an article or the about page fails when a `cc-by-*` credit has no `author` or `sourceUrl`, or a credit URL is not http(s) (`src/utils/image-credit.ts`, checked on drafts too). The federated article appends the cover's credit line (`formatCreditHtml` in the fediverse plugin).
+
+When seeding or querying dynamic zones, populate the nested `file` (and `credit`, `items`) fields so consumers get real URLs.
 
 ## Production upload storage
 

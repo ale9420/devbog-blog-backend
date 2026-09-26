@@ -7,11 +7,26 @@
   },
   "options": {},
   "attributes": {
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.slide"
+    },
     "files": {
       "type": "media",
       "multiple": true,
       "required": false,
       "allowedTypes": ["images"]
+    }
+  },
+  "config": {
+    "metadatas": {
+      "files": {
+        "edit": {
+          "label": "files (obsoleto)",
+          "description": "Obsoleto: usa «items», donde cada imagen lleva su pie y su crédito. Al arrancar, un slider con imágenes aquí y sin «items» se copia a «items»."
+        }
+      }
     }
   }
 }

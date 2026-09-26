@@ -48,6 +48,16 @@
       "required": false,
       "allowedTypes": ["images", "files", "videos"]
     },
+    "coverCredit": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.image-credit",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
     "author": {
       "type": "relation",
       "relation": "manyToOne",

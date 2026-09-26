@@ -89,7 +89,8 @@ export default factories.createCoreRouter('api::event.event');
 Use the shared components in `src/components/shared/`:
 
 - `shared.media` — single media file
-- `shared.slider` — multiple media files
+- `shared.slider` — gallery; `items` of `shared.slide` (file, caption, credit), `files` is legacy
+- `shared.image-credit` — author, source and license of an image (`shared.media.credit`, `shared.slide.credit`, article `coverCredit`)
 - `shared.rich-text` — rich text block
 - `shared.quote` — quote block
 - `shared.seo` — SEO metadata

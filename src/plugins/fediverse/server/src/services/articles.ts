@@ -32,6 +32,20 @@ interface MediaRecord {
   url: string;
   mime: string | null;
   alternativeText: string | null;
+  /** Attribution line (HTML) owed by the image's license, when it has a credit. */
+  creditHtml: string | null;
+}
+
+/** `shared.image-credit` of the cover. */
+interface ImageCreditRow {
+  kind?: string | null;
+  author?: string | null;
+  authorUrl?: string | null;
+  source?: string | null;
+  sourceUrl?: string | null;
+  license?: string | null;
+  licenseUrl?: string | null;
+  modifications?: string | null;
 }
 
 interface MediaRow {
@@ -49,11 +63,50 @@ interface ArticleRow {
   publishedAt?: string | null;
   updatedAt?: string | null;
   cover?: MediaRow | null;
+  coverCredit?: ImageCreditRow | null;
   seo?: { metaImage?: MediaRow | null } | null;
 }
 
 /** `cover` and `seo.metaImage`, the media the federated preview can come from. */
-const ARTICLE_POPULATE = { cover: true, seo: { populate: { metaImage: true } } };
+const ARTICLE_POPULATE = {
+  cover: true,
+  coverCredit: true,
+  seo: { populate: { metaImage: true } },
+};
+
+const CREDIT_KINDS: Record<string, { es: string; en: string }> = {
+  photo: { es: 'Foto', en: 'Photo' },
+  illustration: { es: 'Ilustración', en: 'Illustration' },
+  diagram: { es: 'Diagrama', en: 'Diagram' },
+  screenshot: { es: 'Captura', en: 'Screenshot' },
+};
+
+const LICENSES: Record<string, { label: { es: string; en: string }; url?: string }> = {
+  'own-work': { label: { es: 'obra propia', en: 'own work' } },
+  cc0: {
+    label: { es: 'CC0', en: 'CC0' },
+    url: 'https://creativecommons.org/publicdomain/zero/1.0/',
+  },
+  'public-domain': { label: { es: 'dominio público', en: 'public domain' } },
+  'cc-by-4.0': {
+    label: { es: 'CC BY 4.0', en: 'CC BY 4.0' },
+    url: 'https://creativecommons.org/licenses/by/4.0/',
+  },
+  'cc-by-sa-4.0': {
+    label: { es: 'CC BY-SA 4.0', en: 'CC BY-SA 4.0' },
+    url: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  },
+  'cc-by-nc-4.0': {
+    label: { es: 'CC BY-NC 4.0', en: 'CC BY-NC 4.0' },
+    url: 'https://creativecommons.org/licenses/by-nc/4.0/',
+  },
+  unsplash: {
+    label: { es: 'Licencia Unsplash', en: 'Unsplash License' },
+    url: 'https://unsplash.com/license',
+  },
+  permission: { label: { es: 'uso con permiso', en: 'used with permission' } },
+  other: { label: { es: 'otra licencia', en: 'other license' } },
+};
 
 function escapeHtml(value: string): string {
   return value
@@ -150,14 +203,51 @@ export async function getDefaultLocale(strapi: Core.Strapi): Promise<string> {
  * Media usable as the preview image: it must have a URL and, when the mime type
  * is known, be an image — `cover` and `metaImage` also accept videos and files.
  */
-function toImage(media: MediaRow | null | undefined): MediaRecord | null {
+function toImage(
+  media: MediaRow | null | undefined,
+  creditHtml: string | null = null
+): MediaRecord | null {
   if (!media?.url) return null;
   if (media.mime && !media.mime.startsWith('image/')) return null;
   return {
     url: media.url,
     mime: media.mime ?? null,
     alternativeText: media.alternativeText ?? null,
+    creditHtml,
   };
+}
+
+function link(text: string, href: string | null | undefined, rel = 'nofollow noopener'): string {
+  const label = escapeHtml(text);
+  return href ? `<a href="${escapeHtml(href)}" rel="${rel}">${label}</a>` : label;
+}
+
+/**
+ * The cover's attribution as one line of HTML, as the frontend shows it:
+ * «Foto: Danielfjio · Wikimedia Commons · CC BY-SA 4.0 · recortada». Licenses
+ * such as CC BY require it wherever the image is shared, remote timelines
+ * included. Null when there is no credit.
+ */
+export function formatCreditHtml(
+  credit: ImageCreditRow | null | undefined,
+  locale: string | null
+): string | null {
+  if (!credit?.license) return null;
+  const lang = locale?.startsWith('es') ? 'es' : 'en';
+  const license = LICENSES[credit.license];
+  const parts = [
+    credit.author ? link(credit.author, credit.authorUrl) : null,
+    credit.source || credit.sourceUrl
+      ? link(credit.source || credit.sourceUrl!, credit.sourceUrl)
+      : null,
+    license
+      ? link(license.label[lang], credit.licenseUrl || license.url, 'license nofollow noopener')
+      : null,
+    credit.modifications ? escapeHtml(credit.modifications) : null,
+  ].filter((part): part is string => part != null);
+  if (parts.length === 0) return null;
+  const kind = CREDIT_KINDS[credit.kind ?? 'photo']?.[lang] ?? CREDIT_KINDS.photo[lang];
+  return `${kind}: ${parts.join(' · ')}`;
 }
 
 function toRecord(row: ArticleRow): ArticleRecord | null {
@@ -172,7 +262,9 @@ function toRecord(row: ArticleRow): ArticleRecord | null {
     publishedAt: row.publishedAt,
     updatedAt: row.updatedAt ?? null,
     // The article's own image takes priority; the SEO image is only a fallback.
-    image: toImage(row.cover) ?? toImage(row.seo?.metaImage),
+    image:
+      toImage(row.cover, formatCreditHtml(row.coverCredit, row.locale ?? null)) ??
+      toImage(row.seo?.metaImage),
   };
 }
 
@@ -233,6 +325,7 @@ export function buildArticle(
     `<p><strong>${escapeHtml(record.title)}</strong></p>`,
     record.description ? `<p>${escapeHtml(record.description)}</p>` : '',
     `<p><a href="${escapeHtml(url.href)}">${escapeHtml(url.href)}</a></p>`,
+    record.image?.creditHtml ? `<p><small>${record.image.creditHtml}</small></p>` : '',
   ].join('');
 
   return new Article({
