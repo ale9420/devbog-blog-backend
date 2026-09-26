@@ -3,12 +3,35 @@
 // Enable the fediverse plugin before Strapi boots (config/plugins.ts reads it).
 process.env.FEDIVERSE_ENABLED = 'true';
 process.env.FEDIVERSE_ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER || 'devbog';
+process.env.FRONTEND_URL = 'https://blog.example.test';
 
 const { setupStrapi, cleanupStrapi } = require('./strapi');
 const { createRemoteActor } = require('./helpers/remote-actor');
 const { waitUntil } = require('./helpers/wait-until');
 
 const ACTIVITY_JSON = 'application/activity+json';
+
+async function writeGlobal(data) {
+  const existing = await strapi.documents('api::global.global').findFirst();
+  if (existing) {
+    return strapi.documents('api::global.global').update({ documentId: existing.documentId, data });
+  }
+  return strapi.documents('api::global.global').create({ data });
+}
+
+async function createImage(name) {
+  return strapi.db.query('plugin::upload.file').create({
+    data: {
+      name,
+      hash: name.replace(/\W/g, '_'),
+      ext: '.png',
+      mime: 'image/png',
+      size: 1,
+      url: `/uploads/${name}`,
+      provider: 'local',
+    },
+  });
+}
 
 async function clearFollowers() {
   const rows = await strapi.db.query('plugin::fediverse.follower').findMany();
@@ -42,21 +65,86 @@ describe('Fediverse federation (Phase 1: actor, keys, followers)', () => {
   });
 
   it('derives the actor name and summary from the global settings single type', async () => {
-    const existing = await strapi.documents('api::global.global').findFirst();
-    const data = { siteName: 'Test DevBog', siteDescription: 'A blog about testing federation.' };
-    if (existing) {
-      await strapi
-        .documents('api::global.global')
-        .update({ documentId: existing.documentId, data });
-    } else {
-      await strapi.documents('api::global.global').create({ data });
-    }
+    await writeGlobal({
+      siteName: 'Test DevBog',
+      siteDescription: 'A blog about testing federation.',
+    });
 
     const res = await fetch(actorUrl, { headers: { accept: ACTIVITY_JSON } });
     const body = await res.json();
 
     expect(body.name).toBe('Test DevBog');
     expect(body.summary).toBe('A blog about testing federation.');
+  });
+
+  it('never names the actor after the About page title', async () => {
+    // No global settings yet, but an About page whose heading isn't a name.
+    const documents = (uid) => ({
+      findFirst: async () => (uid === 'api::about.about' ? { title: 'Acerca de este blog' } : null),
+    });
+    const profile = await strapi
+      .plugin('fediverse')
+      .service('actor-profile')
+      .getActorProfile({ ...strapi, documents }, actorUrl);
+
+    expect(profile.name).toBe('BogDev');
+  });
+
+  it('serves the avatar, header, frontend link and profile fields', async () => {
+    const icon = await createImage('avatar.png');
+    const header = await createImage('header.png');
+    await writeGlobal({
+      siteName: 'Test DevBog',
+      siteDescription: 'A blog about testing federation.',
+      favicon: icon.id,
+      fediverseHeader: header.id,
+    });
+
+    const res = await fetch(actorUrl, { headers: { accept: ACTIVITY_JSON } });
+    const body = await res.json();
+
+    expect(body.icon.url).toBe(`http://${host}/uploads/avatar.png`);
+    expect(body.image.url).toBe(`http://${host}/uploads/header.png`);
+    expect(body.url).toBe('https://blog.example.test/');
+    const fields = body.attachment.map((field) => [field.type, field.name, field.value]);
+    expect(fields).toEqual([
+      [
+        'PropertyValue',
+        'Blog',
+        '<a href="https://blog.example.test/" rel="me nofollow noopener" target="_blank">blog.example.test</a>',
+      ],
+      [
+        'PropertyValue',
+        'Código',
+        '<a href="https://github.com/ale9420/devbog-blog-backend" rel="me nofollow noopener" target="_blank">github.com/ale9420/devbog-blog-backend</a>',
+      ],
+    ]);
+  });
+
+  it('sends Update(Person) to followers when the global settings change', async () => {
+    const remote = await createRemoteActor({ preferredUsername: 'profile-reader' });
+    try {
+      await followersService.recordFollower(strapi, {
+        actorId: remote.actorUrl,
+        inbox: remote.inboxUrl,
+      });
+
+      await writeGlobal({ siteName: 'Renamed DevBog', siteDescription: 'New bio.' });
+
+      const update = await waitUntil(() =>
+        remote.inboxDeliveries.find(
+          (a) =>
+            a.type === 'Update' &&
+            a.object?.type === 'Person' &&
+            a.object?.name === 'Renamed DevBog'
+        )
+      );
+      expect(update.actor).toMatch(/\/fediverse\/user\/devbog$/);
+      expect(update.object.id).toBe(update.actor);
+      expect(update.object.summary).toBe('New bio.');
+    } finally {
+      await remote.close();
+    }
   });
 
   it('builds actor URLs with the public scheme when behind a TLS-terminating proxy', async () => {
