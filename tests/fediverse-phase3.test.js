@@ -417,6 +417,9 @@ describe('Fediverse federation (Phase 3: replies as moderated comments)', () => 
         'hi @devbog'
       );
       expect(stripLeadingMentions('@someone hi', 'devbog')).toBe('@someone hi');
+      expect(
+        stripLeadingMentions('@bogdev@blog.example @devbog hola @bogdev', ['bogdev', 'devbog'])
+      ).toBe('hola @bogdev');
     });
 
     it('parseFrontendArticleUrl understands default and prefixed locales', () => {

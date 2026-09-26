@@ -38,7 +38,8 @@ The plugin is its own TypeScript project bundled by esbuild (`npm run build:fedi
 | -------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------- |
 | `FEDIVERSE_ENABLED`                                | `false`                 | Master switch, read at boot by `config/plugins.ts`. Off = no routes, no content types    |
 | `URL`                                              | `http://localhost:1337` | Strapi's public origin. Activity ids built outside a request come from it: keep it right |
-| `FEDIVERSE_ACTOR_IDENTIFIER`                       | `devbog`                | The `@user` part. Changing it after people follow breaks their follows                   |
+| `FEDIVERSE_ACTOR_USERNAME`                         | `bogdev`                | The handle's `@user` (`preferredUsername`); safe to change, WebFinger maps it            |
+| `FEDIVERSE_ACTOR_IDENTIFIER`                       | `devbog`                | Path of the actor URI. Never change it: remote follows are keyed by the URI              |
 | `FEDIVERSE_ACTOR_NAME` / `FEDIVERSE_ACTOR_SUMMARY` | unset                   | Fallbacks when `global` has no name/description                                          |
 | `FEDIVERSE_ACTOR_SOURCE_URL`                       | backend GitHub repo     | "Código" profile field link                                                              |
 | `FRONTEND_URL`                                     | `https://bogdev.com.co` | Origin of the human-facing article links                                                 |
