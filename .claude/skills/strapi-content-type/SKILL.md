@@ -92,6 +92,7 @@ Use the shared components in `src/components/shared/`:
 - `shared.slider` — multiple media files
 - `shared.rich-text` — rich text block
 - `shared.quote` — quote block
+- `shared.reference` — bibliographic source (article `references`, cited as `[@key]`)
 - `shared.seo` — SEO metadata
 
 Example dynamic zone on a new content type:

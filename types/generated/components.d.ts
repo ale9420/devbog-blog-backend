@@ -257,6 +257,54 @@ export interface SharedQuote extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedReference extends Struct.ComponentSchema {
+  collectionName: 'components_shared_references';
+  info: {
+    description: 'A bibliographic source, cited in the body as [@key]';
+    displayName: 'Reference';
+    icon: 'book';
+  };
+  attributes: {
+    accessedAt: Schema.Attribute.Date;
+    authors: Schema.Attribute.Text & Schema.Attribute.Required;
+    container: Schema.Attribute.String;
+    doi: Schema.Attribute.String;
+    issue: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 32;
+      }>;
+    key: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64;
+      }>;
+    pages: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 32;
+      }>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    type: Schema.Attribute.Enumeration<
+      ['journal', 'conference', 'preprint', 'book', 'chapter', 'web', 'software', 'docs']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'journal'>;
+    url: Schema.Attribute.String;
+    venueLabel: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 80;
+      }>;
+    volume: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 32;
+      }>;
+    year: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 16;
+      }>;
+  };
+}
+
 export interface SharedRichText extends Struct.ComponentSchema {
   collectionName: 'components_shared_rich_texts';
   info: {
@@ -341,6 +389,7 @@ declare module '@strapi/strapi' {
       'shared.media': SharedMedia;
       'shared.meta-social': SharedMetaSocial;
       'shared.quote': SharedQuote;
+      'shared.reference': SharedReference;
       'shared.rich-text': SharedRichText;
       'shared.seo': SharedSeo;
       'shared.slider': SharedSlider;

@@ -3,6 +3,8 @@
  * words a reader sees (including code) and drops Markdown and HTML syntax.
  */
 
+import { CITATION_PATTERN } from './citations';
+
 interface BodyBlock {
   __component?: string;
   body?: string | null;
@@ -18,6 +20,8 @@ export function markdownToPlainText(markdown: string): string {
       .replace(/\r\n?/g, '\n')
       // Code fences: keep the code, drop the fences and their language tag.
       .replace(/^[ \t]*(```|~~~)[^\n]*$/gm, '')
+      // Citation markers (`[@key]`), with the space before them.
+      .replace(new RegExp(`[ \\t]*${CITATION_PATTERN.source}`, 'g'), '')
       // Images and links keep their visible text.
       .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
       .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
