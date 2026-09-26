@@ -139,8 +139,10 @@ async function updateBlocks(blocks) {
       updatedBlocks.push(blockCopy);
     } else if (block.__component === 'shared.slider') {
       const existingAndUploadedFiles = await checkFileExistsBeforeUpload(block.files);
+      // One slide per image; `files` is the legacy field, so it is left empty.
       const blockCopy = { ...block };
-      blockCopy.files = existingAndUploadedFiles;
+      delete blockCopy.files;
+      blockCopy.items = [existingAndUploadedFiles].flat().map((file) => ({ file }));
       updatedBlocks.push(blockCopy);
     } else {
       updatedBlocks.push(block);

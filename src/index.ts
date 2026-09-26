@@ -3,8 +3,11 @@ import { checkArticleCitations } from './api/article/utils/check-citations';
 import { blocksToPlainText } from './api/article/utils/plain-text';
 import { backfillArticlePlainText } from './migrations/article-plain-text';
 import { consolidateCategories, hasChanges } from './migrations/consolidate-categories';
+import { migrateSliderItems } from './migrations/slider-items';
+import { assertImageCreditsValid } from './utils/image-credit';
 
 const ARTICLE_UID = 'api::article.article';
+const ABOUT_UID = 'api::about.about';
 
 export default {
   /**
@@ -32,6 +35,18 @@ export default {
       }
       return next();
     });
+
+    // Rejects image credits that break their license's attribution terms.
+    strapi.documents.use(async (context, next) => {
+      if (
+        (context.uid === ARTICLE_UID || context.uid === ABOUT_UID) &&
+        (context.action === 'create' || context.action === 'update')
+      ) {
+        const data = (context.params as { data?: Record<string, unknown> }).data;
+        if (data) assertImageCreditsValid(data);
+      }
+      return next();
+    });
   },
 
   /**
@@ -52,5 +67,8 @@ export default {
 
     const filled = await backfillArticlePlainText(strapi);
     if (filled > 0) strapi.log.info(`[articles] filled the plain text of ${filled} rows`);
+
+    const sliders = await migrateSliderItems(strapi);
+    if (sliders > 0) strapi.log.info(`[sliders] copied files into items for ${sliders} sliders`);
   },
 };

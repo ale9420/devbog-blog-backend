@@ -1,15 +1,17 @@
 {
-  "collectionName": "components_shared_media",
+  "collectionName": "components_shared_slides",
   "info": {
-    "displayName": "Media",
-    "icon": "file-video"
+    "displayName": "Slide",
+    "icon": "picture",
+    "description": "One image of a slider, with its own caption and credit"
   },
   "options": {},
   "attributes": {
     "file": {
-      "allowedTypes": ["images", "files", "videos"],
       "type": "media",
-      "multiple": false
+      "multiple": false,
+      "required": true,
+      "allowedTypes": ["images"]
     },
     "caption": {
       "type": "text"

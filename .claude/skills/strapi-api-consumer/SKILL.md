@@ -46,7 +46,22 @@ GET /api/articles?populate[cover][fields][0]=url
 GET /api/articles?populate[blocks][populate][file][fields][0]=url
 ```
 
-For dynamic-zone media blocks (`shared.media`, `shared.slider`), populate the nested `file` field so consumers receive real URLs.
+For dynamic-zone media blocks (`shared.media`, `shared.slider`), populate the nested `file` field so consumers receive real URLs. `populate=*` only reaches one level, so the article page populates figures and their credits explicitly:
+
+```js
+populate: {
+  cover: true,
+  coverCredit: true,
+  blocks: {
+    on: {
+      'shared.media': { populate: { file: true, credit: true } },
+      'shared.slider': { populate: { items: { populate: { file: true, credit: true } } } },
+    },
+  },
+}
+```
+
+Each figure has a `caption` and a `credit` (`shared.image-credit`, see the `strapi-media` skill); the frontend maps `kind` and `license` to labels and license URLs and numbers figures (`FIG. nn`). Read slider images from `items` (one caption and credit per image), not the legacy `files`.
 
 ## Filtering, sorting, and pagination
 
