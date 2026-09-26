@@ -24,7 +24,7 @@ The blog is an ActivityPub actor (`@devbog@<api domain>`) served by a local Stra
 | `services/publisher.ts`                          | `entry.publish/unpublish/delete` → fan-out to followers                                                     |
 | `services/replies.ts`                            | `Create/Update/Delete(Note)` → moderated comments; HTML → plain text                                        |
 | `services/interactions.ts`                       | Likes/boosts, dedupe, counts                                                                                |
-| `services/{followers,keys,actor-profile}.ts`     | Follower rows, persisted actor key pair, actor name/bio from `global`/`about`                               |
+| `services/{followers,keys,actor-profile}.ts`     | Follower rows, persisted actor key pair, actor name/bio/avatar/header/fields from `global`                  |
 | `services/stats.ts`                              | Batch counts and ranking as aggregate SQL (likes, boosts, approved fediverse replies)                       |
 | `controllers/stats.ts`, `routes/`                | `GET /api/fediverse/articles/:documentId/stats`, `/articles/stats`, `/articles/ranking`                     |
 
@@ -39,7 +39,8 @@ The plugin is its own TypeScript project bundled by esbuild (`npm run build:fedi
 | `FEDIVERSE_ENABLED`                                | `false`                 | Master switch, read at boot by `config/plugins.ts`. Off = no routes, no content types    |
 | `URL`                                              | `http://localhost:1337` | Strapi's public origin. Activity ids built outside a request come from it: keep it right |
 | `FEDIVERSE_ACTOR_IDENTIFIER`                       | `devbog`                | The `@user` part. Changing it after people follow breaks their follows                   |
-| `FEDIVERSE_ACTOR_NAME` / `FEDIVERSE_ACTOR_SUMMARY` | unset                   | Fallbacks when `global`/`about` have no name/description                                 |
+| `FEDIVERSE_ACTOR_NAME` / `FEDIVERSE_ACTOR_SUMMARY` | unset                   | Fallbacks when `global` has no name/description                                          |
+| `FEDIVERSE_ACTOR_SOURCE_URL`                       | backend GitHub repo     | "Código" profile field link                                                              |
 | `FRONTEND_URL`                                     | `https://bogdev.com.co` | Origin of the human-facing article links                                                 |
 | `FRONTEND_ARTICLE_PATH`                            | `/blog/{slug}`          | Article path template                                                                    |
 | `FRONTEND_DEFAULT_LOCALE`                          | `en`                    | Locale the frontend serves unprefixed; other locales get `/<locale>` in their links      |
@@ -54,6 +55,7 @@ Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`
 - **Articles:** publishing sends `Create(Article)` (public `to`, followers in `cc`); publishing an already-sent article again is an `Update`; unpublish/delete is a `Delete`. Only the default locale, only published, and only articles with a `slug`. Each fan-out logs how many followers it reached (`no followers yet` means nothing was sent).
 - **Replies:** a `Create(Note)` replying to an article (by ActivityPub id or frontend URL) or to a stored reply becomes a `PENDING` comment. Content is stripped to plain text. Edits go back to `PENDING`; deletes set `removed`. Anything else is ignored.
 - **Moderation:** approve/reject in the admin comments moderation view. The global middleware hides `PENDING`/`REJECTED` comments from `GET /api/comments/*`; never remove it.
+- **Profile:** saving the `global` single type sends `Update(Person)` so followers' servers refresh the cached name, bio, avatar and header.
 - **Likes/boosts:** `Like`/`Announce` of a published article are recorded once per (type, actor, article); `Undo` removes only the sender's own.
 
 ## Pitfalls that cost time before

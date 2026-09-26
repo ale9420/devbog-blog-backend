@@ -1,8 +1,9 @@
 import type { Core } from '@strapi/strapi';
 
-import type { Activity } from '@fedify/fedify/vocab';
+import { PUBLIC_COLLECTION, Update, type Activity } from '@fedify/fedify/vocab';
 
-import { ACTOR_IDENTIFIER, getFederation } from '../federation';
+import { ACTOR_IDENTIFIER, buildActor, getFederation } from '../federation';
+import { GLOBAL_UID } from './actor-profile';
 import {
   ARTICLE_UID,
   buildArticleActivity,
@@ -96,15 +97,40 @@ async function onRemoved(strapi: Core.Strapi, event: EntryEvent): Promise<void> 
 }
 
 /**
- * Federates article publish state changes. Failures are logged and swallowed:
+ * Mastodon caches remote profiles, so a change to the `global` single type
+ * (name, description, avatar, header) only reaches followers' servers through
+ * an Update(Person) carrying the new actor.
+ */
+async function onProfileChanged(strapi: Core.Strapi): Promise<void> {
+  const ctx = createContext(strapi);
+  const actor = await buildActor(ctx, ACTOR_IDENTIFIER);
+  const recipients = await sendToFollowers(
+    strapi,
+    new Update({
+      id: new URL(`#profile-update/${Date.now()}`, actor.id!),
+      actor: actor.id,
+      object: actor,
+      to: PUBLIC_COLLECTION,
+      cc: ctx.getFollowersUri(ACTOR_IDENTIFIER),
+    })
+  );
+  strapi.log.info(`[fediverse] Update(Person) for the profile: ${describeDelivery(recipients)}`);
+}
+
+/**
+ * Federates article publish state changes and profile edits. Failures are logged and swallowed:
  * the events fire after the Strapi operation has committed, and federation
  * problems must never surface as editor-facing errors.
  */
 export function subscribe(strapi: Core.Strapi) {
   const guarded =
-    (label: string, handler: (strapi: Core.Strapi, event: EntryEvent) => Promise<void>) =>
+    (
+      uid: string,
+      label: string,
+      handler: (strapi: Core.Strapi, event: EntryEvent) => Promise<void>
+    ) =>
     async (event: EntryEvent): Promise<void> => {
-      if (event?.uid !== ARTICLE_UID) return;
+      if (event?.uid !== uid) return;
       try {
         await handler(strapi, event);
       } catch (error) {
@@ -113,9 +139,27 @@ export function subscribe(strapi: Core.Strapi) {
     };
 
   unsubscribers = [
-    strapi.eventHub.on('entry.publish', guarded('article publish federation', onPublish)),
-    strapi.eventHub.on('entry.unpublish', guarded('article unpublish federation', onRemoved)),
-    strapi.eventHub.on('entry.delete', guarded('article delete federation', onRemoved)),
+    strapi.eventHub.on(
+      'entry.publish',
+      guarded(ARTICLE_UID, 'article publish federation', onPublish)
+    ),
+    strapi.eventHub.on(
+      'entry.unpublish',
+      guarded(ARTICLE_UID, 'article unpublish federation', onRemoved)
+    ),
+    strapi.eventHub.on(
+      'entry.delete',
+      guarded(ARTICLE_UID, 'article delete federation', onRemoved)
+    ),
+    // `global` has no draft & publish: saving it in the admin emits entry.update.
+    strapi.eventHub.on(
+      'entry.create',
+      guarded(GLOBAL_UID, 'profile update federation', onProfileChanged)
+    ),
+    strapi.eventHub.on(
+      'entry.update',
+      guarded(GLOBAL_UID, 'profile update federation', onProfileChanged)
+    ),
   ];
 }
 

@@ -3,6 +3,7 @@ import type { Core } from '@strapi/strapi';
 import {
   createFederation,
   MemoryKvStore,
+  type Context,
   type Federation,
   type InboxContext,
 } from '@fedify/fedify';
@@ -19,6 +20,7 @@ import {
   Link,
   Note,
   Person,
+  PropertyValue,
   Undo,
   Update,
 } from '@fedify/fedify/vocab';
@@ -33,6 +35,7 @@ import {
   listPublishedArticles,
 } from './services/articles';
 import { resolveArticleId } from './services/articles';
+import { getActorProfile, type ActorProfileField } from './services/actor-profile';
 import { getActorKeyPairs } from './services/keys';
 import {
   recordInteraction,
@@ -63,10 +66,6 @@ export const OUTBOX_PATH = '/fediverse/user/{identifier}/outbox';
 export const ARTICLE_PATH = '/fediverse/articles/{documentId}';
 
 const OUTBOX_PAGE_SIZE = 20;
-
-function pluginService<T>(strapi: Core.Strapi, name: string): T {
-  return strapi.plugin('fediverse').service(name) as T;
-}
 
 /**
  * Extracts the avatar image URL from a remote actor's icon (Mastodon sends
@@ -177,6 +176,56 @@ async function receiveInteraction(
 
 type Logger = Pick<Core.Strapi['log'], 'error'>;
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Mastodon renders a PropertyValue's value as HTML, so the URL becomes a link. */
+function profileField(field: ActorProfileField): PropertyValue {
+  const href = escapeHtml(field.url);
+  const label = escapeHtml(field.url.replace(/^https?:\/\//, '').replace(/\/$/, ''));
+  return new PropertyValue({
+    name: field.name,
+    value: `<a href="${href}" rel="me nofollow noopener" target="_blank">${label}</a>`,
+  });
+}
+
+/**
+ * The blog actor, as served by the actor dispatcher and embedded in the
+ * `Update(Person)` sent when the profile changes. Profile data comes from the
+ * `global` single type (see services/actor-profile.ts).
+ */
+export async function buildActor(
+  ctx: Context<FediverseContextData>,
+  identifier: string
+): Promise<Person> {
+  const actorUri = ctx.getActorUri(identifier);
+  const profile = await getActorProfile(ctx.data.strapi, actorUri.href);
+  const keyPairs = await ctx.getActorKeyPairs(identifier);
+
+  return new Person({
+    id: actorUri,
+    preferredUsername: identifier,
+    name: profile.name,
+    summary: profile.summary,
+    url: new URL(profile.url),
+    inbox: ctx.getInboxUri(identifier),
+    followers: ctx.getFollowersUri(identifier),
+    outbox: ctx.getOutboxUri(identifier),
+    discoverable: true,
+    manuallyApprovesFollowers: false,
+    icon: profile.iconUrl ? new Image({ url: new URL(profile.iconUrl) }) : undefined,
+    image: profile.headerUrl ? new Image({ url: new URL(profile.headerUrl) }) : undefined,
+    attachments: profile.fields.map(profileField),
+    publicKey: keyPairs[0]?.cryptographicKey,
+    assertionMethods: keyPairs.map((keyPair) => keyPair.multikey),
+  });
+}
+
 export function createFediverseFederation(log?: Logger): Federation<FediverseContextData> {
   const federation = createFederation<FediverseContextData>({
     kv: new MemoryKvStore(),
@@ -196,37 +245,7 @@ export function createFediverseFederation(log?: Logger): Federation<FediverseCon
   federation
     .setActorDispatcher(ACTOR_PATH, async (ctx, identifier) => {
       if (identifier !== ACTOR_IDENTIFIER) return null;
-
-      const strapi = ctx.data.strapi;
-      const actorUri = ctx.getActorUri(identifier);
-
-      const profile = await pluginService<{
-        getActorProfile(
-          strapi: Core.Strapi,
-          baseUrl: string
-        ): Promise<{
-          name: string;
-          summary: string;
-          iconUrl: string | null;
-        }>;
-      }>(strapi, 'actor-profile').getActorProfile(strapi, actorUri.href);
-
-      const keyPairs = await ctx.getActorKeyPairs(identifier);
-
-      return new Person({
-        id: actorUri,
-        preferredUsername: identifier,
-        name: profile.name,
-        summary: profile.summary,
-        url: actorUri,
-        inbox: ctx.getInboxUri(identifier),
-        followers: ctx.getFollowersUri(identifier),
-        outbox: ctx.getOutboxUri(identifier),
-        discoverable: true,
-        icon: profile.iconUrl ? new Image({ url: new URL(profile.iconUrl) }) : undefined,
-        publicKey: keyPairs[0]?.cryptographicKey,
-        assertionMethods: keyPairs.map((keyPair) => keyPair.multikey),
-      });
+      return buildActor(ctx, identifier);
     })
     .setKeyPairsDispatcher(async (context, identifier) => {
       if (identifier !== ACTOR_IDENTIFIER) return [];

@@ -22,6 +22,12 @@
       "required": false,
       "allowedTypes": ["images", "files", "videos"]
     },
+    "fediverseHeader": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
     "siteDescription": {
       "type": "text",
       "required": true
