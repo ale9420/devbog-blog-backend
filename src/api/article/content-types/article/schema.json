@@ -69,6 +69,16 @@
       },
       "components": ["shared.media", "shared.quote", "shared.rich-text", "shared.slider"]
     },
+    "references": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.reference",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
     "seo": {
       "type": "component",
       "repeatable": false,
@@ -106,6 +116,12 @@
         "edit": {
           "label": "pathOrder",
           "description": "Posición del artículo en la ruta de lectura de su categoría (1 = primero). Déjalo vacío para que no aparezca en la ruta. Se comparte entre idiomas."
+        }
+      },
+      "references": {
+        "edit": {
+          "label": "references",
+          "description": "Fuentes del artículo. Cítalas en el texto con [@clave] (varias: [@a; @b]); el número [n] sale del orden en que aparecen. Se comparten entre idiomas."
         }
       }
     }

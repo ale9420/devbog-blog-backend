@@ -89,6 +89,14 @@ GET /api/articles?locale=es&filters[category][key][$eq]=privacidad&filters[pathO
 
 "N of M read" takes M from `meta.pagination.total`; which ones are read is tracked by the frontend.
 
+References: an article's sources are the repeatable `references` component (`shared.reference`, shared by every locale), returned only with `populate`:
+
+```http
+GET /api/articles?locale=es&filters[slug][$eq]=que-es-rag&populate[references]=true
+```
+
+Each entry has `key`, `type` (`journal` | `conference` | `preprint` | `book` | `chapter` | `web` | `software` | `docs`), `authors` (already in APA form), `year` (may be `s. f.`), `title`, and optionally `container`, `volume`, `issue`, `pages`, `venueLabel`, `doi` (bare, e.g. `10.1145/3571730`), `url` and `accessedAt` (date). The backend does not format APA: the frontend builds it from these fields. The Markdown of `shared.rich-text` and `shared.quote` blocks cites them as `[@key]`, or `[@a; @b]` for several; `[@key]` inside code or followed by `(url)` is not a citation. The number `[n]` is not stored: it is the order in which each key first appears across `blocks`. Saving an article that cites an unknown key, repeats a key or has a malformed key, DOI or URL fails with a validation error; uncited references are allowed (list them after the cited ones). `plainText` and search snippets have the markers removed.
+
 Pagination (`config/api.ts` sets `defaultLimit: 25`, `maxLimit: 100`):
 
 ```http

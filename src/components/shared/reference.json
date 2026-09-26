@@ -1,0 +1,66 @@
+{
+  "collectionName": "components_shared_references",
+  "info": {
+    "displayName": "Reference",
+    "icon": "book",
+    "description": "A bibliographic source, cited in the body as [@key]"
+  },
+  "options": {},
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true,
+      "maxLength": 64,
+      "regex": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["journal", "conference", "preprint", "book", "chapter", "web", "software", "docs"],
+      "default": "journal",
+      "required": true
+    },
+    "authors": {
+      "type": "text",
+      "required": true
+    },
+    "year": {
+      "type": "string",
+      "required": true,
+      "maxLength": 16
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "container": {
+      "type": "string"
+    },
+    "volume": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "issue": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "pages": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "venueLabel": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "doi": {
+      "type": "string",
+      "regex": "^10\\.\\d{4,9}/\\S+$"
+    },
+    "url": {
+      "type": "string",
+      "regex": "^https?://\\S+$"
+    },
+    "accessedAt": {
+      "type": "date"
+    }
+  }
+}
