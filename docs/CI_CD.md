@@ -348,7 +348,7 @@ Requirements that are easy to miss:
 ### Enabling the Fediverse in Production
 
 1. Merge `develop` into `main` through a pull request, so CI (typecheck, lint, tests, build) gates it. `develop` also carries `proxy.koa`, the `prestart` script and the comments-visibility middleware, which apply even with the fediverse off.
-2. Take a database snapshot or branch first (Neon). On first boot with the plugin enabled Strapi creates `fediverse_followers` and `fediverse_interactions` and adds `fediverse_uri` / `fediverse_actor_handle` to the comments table.
+2. Take a database backup first (Dokploy → the PostgreSQL service → Backups → Run manual backup). On first boot with the plugin enabled Strapi creates `fediverse_followers` and `fediverse_interactions` and adds `fediverse_uri` / `fediverse_actor_handle` to the comments table.
 3. In Dokploy set `FEDIVERSE_ENABLED=true` on the production app and redeploy. Confirm `URL=https://api.bogdev.com.co`.
 4. Verify from outside:
    ```bash

@@ -6,7 +6,7 @@ A more detailed `AGENTS.md` already exists in this repo with naming conventions 
 
 ## Project
 
-Strapi 5 (TypeScript) headless CMS backend for the BogDev blog, deployed as a Docker image to a Hetzner VPS via Dokploy (see `docs/CI_CD.md`). Production DB is Neon Tech PostgreSQL; local dev defaults to SQLite.
+Strapi 5 (TypeScript) headless CMS backend for the BogDev blog, deployed as a Docker image to a Hetzner VPS via Dokploy (see `docs/CI_CD.md`). Production DB is PostgreSQL 18 managed by Dokploy on the same VPS (`bogdev-prod`), reached through `DATABASE_URL`; local dev defaults to SQLite.
 
 ## Commands
 
