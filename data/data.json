@@ -334,6 +334,28 @@
       "description": "Latest news and updates from the tech world."
     }
   ],
+  "tags": [
+    {
+      "name": "Strapi",
+      "slug": "strapi"
+    },
+    {
+      "name": "TypeScript",
+      "slug": "typescript"
+    },
+    {
+      "name": "Docker",
+      "slug": "docker"
+    },
+    {
+      "name": "Node.js",
+      "slug": "nodejs"
+    },
+    {
+      "name": "Git",
+      "slug": "git"
+    }
+  ],
   "authors": [
     {
       "name": "David Doe",
@@ -393,7 +415,8 @@
           "__component": "shared.rich-text",
           "body": "## Consuming the API\n\nOnce your content types are set up and populated, you can access them via the REST API:\n\n```\nGET /api/articles\nGET /api/articles/:id\n```\n\nDon't forget to configure permissions in the admin panel to make your content publicly accessible.\n\n## Conclusion\n\nStrapi 5 makes it incredibly easy to build and manage content APIs. In the next article, we'll explore advanced features like custom controllers, policies, and middleware."
         }
-      ]
+      ],
+      "tags": ["Strapi", "TypeScript"]
     },
     {
       "title": "Docker Multi-Stage Builds for Node.js Applications",
@@ -430,7 +453,8 @@
           "__component": "shared.rich-text",
           "body": "## Security Benefits\n\nSmaller images mean fewer CVEs to patch. By excluding build tools and source code from your production image, you reduce the potential attack surface significantly.\n\n## Conclusion\n\nMulti-stage builds are essential for production Node.js deployments. They improve build times, reduce image sizes, and enhance security. Start using them today in your CI/CD pipeline."
         }
-      ]
+      ],
+      "tags": ["Docker", "Node.js"]
     },
     {
       "title": "The Internet's Own Boy: Aaron Swartz",
@@ -508,7 +532,8 @@
           "__component": "shared.rich-text",
           "body": "## Error Handling\n\nCentralized error handling is crucial for production APIs. Create an error middleware that catches all errors and returns consistent JSON responses:\n\n- Use custom error classes for different HTTP status codes\n- Log errors with structured logging\n- Never expose internal error details to clients in production\n\n## Conclusion\n\nTypeScript and Express make a powerful combination for building reliable, maintainable APIs. The type system catches bugs early and makes refactoring safer."
         }
-      ]
+      ],
+      "tags": ["Node.js", "TypeScript"]
     },
     {
       "title": "Contributing to Open Source: A Beginner's Guide",
@@ -545,7 +570,8 @@
           "__component": "shared.rich-text",
           "body": "## Making Your First PR\n\nKeep your first contribution small. Fix a typo in documentation, add a missing test, or resolve a simple bug. Small, focused PRs are more likely to be merged quickly.\n\n## Common Pitfalls\n\n- Don't submit huge PRs — break them into smaller pieces\n- Always run tests before submitting\n- Be responsive to review feedback\n- Don't take rejection personally — it's about the code, not you"
         }
-      ]
+      ],
+      "tags": ["Git"]
     },
     {
       "title": "This Shrimp Is Awesome: Nature's Perfect Predator",
@@ -709,7 +735,8 @@
           "__component": "shared.rich-text",
           "body": "## Caching Strategies\n\nEffective caching can cut your build times in half:\n\n- **Dependency caching**: Cache `node_modules` or `pip` packages\n- **Docker layer caching**: Reuse unchanged layers in multi-stage builds\n- **Build artifact caching**: Cache compiled assets between runs\n\n## Deployment Strategies\n\nConsider blue-green deployments or canary releases to minimize downtime and risk. Feature flags let you decouple deployment from release."
         }
-      ]
+      ],
+      "tags": ["Docker", "Git"]
     }
   ],
   "subscribers": [

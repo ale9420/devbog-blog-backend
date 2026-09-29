@@ -71,10 +71,11 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     ctx.body = await statsForArticles(strapi, ids);
   },
 
-  /** GET /articles/ranking?page=1&pageSize=6&locale=es&category=ia&search=rag */
+  /** GET /articles/ranking?page=1&pageSize=6&locale=es&category=ia&tag=vue&search=rag */
   async ranking(ctx: Context) {
     const locale = typeof ctx.query.locale === 'string' ? ctx.query.locale : undefined;
     const category = textParam(ctx.query.category);
+    const tag = textParam(ctx.query.tag);
     const search = textParam(ctx.query.search);
     const page = positiveInt(ctx.query.page, 1);
     const pageSize = Math.min(
@@ -88,6 +89,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       pageSize,
       locale,
       category,
+      tag,
       search: search && search.length >= RANKING_SEARCH_MIN_LENGTH ? search : undefined,
     });
   },

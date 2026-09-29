@@ -3,7 +3,15 @@
 const fs = require('fs-extra');
 const path = require('path');
 const mime = require('mime-types');
-const { categories, authors, articles, global, about, subscribers } = require('../data/data.json');
+const {
+  categories,
+  tags,
+  authors,
+  articles,
+  global,
+  about,
+  subscribers,
+} = require('../data/data.json');
 
 async function seedExampleApp() {
   const shouldImportSeedData = await isFirstRun();
@@ -155,10 +163,16 @@ async function updateBlocks(blocks) {
 async function importArticles() {
   const allCategories = await strapi.documents('api::category.category').findMany();
   const allAuthors = await strapi.documents('api::author.author').findMany();
+  const allTags = await strapi.documents('api::tag.tag').findMany();
 
   const categoryMap = {};
   allCategories.forEach((cat) => {
     categoryMap[cat.name] = cat.documentId;
+  });
+
+  const tagMap = {};
+  allTags.forEach((tag) => {
+    tagMap[tag.name] = tag.documentId;
   });
 
   const authorMap = {};
@@ -188,6 +202,8 @@ async function importArticles() {
     } else {
       delete entryData.category;
     }
+
+    entryData.tags = (article.tags || []).map((name) => tagMap[name]).filter(Boolean);
 
     if (authorDocumentId) {
       entryData.author = authorDocumentId;
@@ -246,6 +262,12 @@ async function importCategories() {
   }
 }
 
+async function importTags() {
+  for (const tag of tags) {
+    await createEntry({ model: 'tag', entry: tag });
+  }
+}
+
 async function importAuthors() {
   for (const author of authors) {
     const avatar = await checkFileExistsBeforeUpload([author.avatar]);
@@ -287,6 +309,7 @@ async function importSeedData() {
   });
 
   await importCategories();
+  await importTags();
   await importAuthors();
   await importArticles();
   await importGlobal();

@@ -11,6 +11,7 @@ const ARTICLE_UID = 'api::article.article';
 const COMMENT_UID = 'plugin::comments.comment';
 const FOLLOWER_UID = 'plugin::fediverse.follower';
 const CATEGORY_UID = 'api::category.category';
+const TAG_UID = 'api::tag.tag';
 
 const BLOCKED_ACTOR = 'https://spam.example/users/troll';
 
@@ -21,13 +22,18 @@ describe('Fediverse batch stats and ranking', () => {
   const get = (path, query) => request(strapi.server.httpServer).get(path).query(query);
 
   /** A published article whose published rows get a fixed `publishedAt`, so ties sort predictably. */
-  async function publishedArticle(name, publishedAt, { english = false, category, title } = {}) {
+  async function publishedArticle(
+    name,
+    publishedAt,
+    { english = false, category, tags, title } = {}
+  ) {
     const draft = await strapi.documents(ARTICLE_UID).create({
       data: {
         title: title ?? `Stats ${name}`,
         slug: `stats-${name}`,
         description: 'Excerpt.',
         ...(category ? { category } : {}),
+        ...(tags ? { tags } : {}),
       },
     });
     await strapi.documents(ARTICLE_UID).publish({ documentId: draft.documentId });
@@ -96,22 +102,26 @@ describe('Fediverse batch stats and ranking', () => {
     };
     const ia = await category('ia');
     const linux = await category('linux');
+    const vue = (await strapi.documents(TAG_UID).create({ data: { name: 'Vue', slug: 'vue' } }))
+      .documentId;
 
     // Default locale ('en' in tests). Totals: a = 4, b = 2, c = 2 (newer than b), d = 0 (newest).
-    // Categories: a and c are `ia`, b is `linux`, d has none.
+    // Categories: a and c are `ia`, b is `linux`, d has none. Tag `vue`: a, b and d.
     articles.a = await publishedArticle('a', '2026-01-01T00:00:00.000Z', {
       category: ia,
+      tags: [vue],
       title: 'Stats a: RAG in practice',
     });
     articles.b = await publishedArticle('b', '2026-02-01T00:00:00.000Z', {
       category: linux,
+      tags: [vue],
       title: 'Stats b: SSH 100% hardened',
     });
     articles.c = await publishedArticle('c', '2026-03-01T00:00:00.000Z', {
       category: ia,
       title: 'Stats c: RAG evaluation',
     });
-    articles.d = await publishedArticle('d', '2026-04-01T00:00:00.000Z');
+    articles.d = await publishedArticle('d', '2026-04-01T00:00:00.000Z', { tags: [vue] });
 
     await interact(articles.a, 'like');
     await interact(articles.a, 'like');
@@ -271,6 +281,41 @@ describe('Fediverse batch stats and ranking', () => {
       const res = await get('/api/fediverse/articles/ranking', { category: 'nope' }).expect(200);
       expect(res.body.data).toEqual([]);
       expect(res.body.meta.pagination.total).toBe(0);
+    });
+
+    it('narrows the ranking to a tag', async () => {
+      const res = await get('/api/fediverse/articles/ranking', { tag: 'vue' }).expect(200);
+      expect(res.body.data.map((row) => row.documentId)).toEqual([
+        articles.a,
+        articles.b,
+        articles.d,
+      ]);
+      expect(res.body.meta.pagination).toEqual({ page: 1, pageSize: 6, pageCount: 1, total: 3 });
+    });
+
+    it('combines the tag with the category', async () => {
+      const res = await get('/api/fediverse/articles/ranking', {
+        tag: 'vue',
+        category: 'ia',
+      }).expect(200);
+      expect(res.body.data.map((row) => row.documentId)).toEqual([articles.a]);
+      expect(res.body.meta.pagination.total).toBe(1);
+    });
+
+    it('returns an empty page for an unknown tag', async () => {
+      const res = await get('/api/fediverse/articles/ranking', { tag: 'nope' }).expect(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.pagination.total).toBe(0);
+    });
+
+    it('paginates the ranking filtered by tag', async () => {
+      const second = await get('/api/fediverse/articles/ranking', {
+        tag: 'vue',
+        page: 2,
+        pageSize: 2,
+      }).expect(200);
+      expect(second.body.data.map((row) => row.documentId)).toEqual([articles.d]);
+      expect(second.body.meta.pagination).toEqual({ page: 2, pageSize: 2, pageCount: 2, total: 3 });
     });
 
     it('ignores searches shorter than three letters', async () => {
