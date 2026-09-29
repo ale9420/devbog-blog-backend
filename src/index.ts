@@ -2,6 +2,7 @@ import type { Core } from '@strapi/strapi';
 import { checkArticleCitations } from './api/article/utils/check-citations';
 import { blocksToPlainText } from './api/article/utils/plain-text';
 import { backfillArticlePlainText } from './migrations/article-plain-text';
+import { backfillCommentLocale } from './migrations/comment-locale';
 import { consolidateCategories, hasChanges } from './migrations/consolidate-categories';
 import { migrateSliderItems } from './migrations/slider-items';
 import { assertImageCreditsValid } from './utils/image-credit';
@@ -70,5 +71,8 @@ export default {
 
     const sliders = await migrateSliderItems(strapi);
     if (sliders > 0) strapi.log.info(`[sliders] copied files into items for ${sliders} sliders`);
+
+    const localized = await backfillCommentLocale(strapi);
+    if (localized > 0) strapi.log.info(`[comments] set the locale of ${localized} comments`);
   },
 };
