@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 
-import { ARTICLE_UID, findPublishedArticle, resolveArticleId } from './articles';
+import { ARTICLE_UID, findPublishedArticle, getDefaultLocale, resolveArticleId } from './articles';
 import { isActorBlocked } from './followers';
 
 export const COMMENT_UID = 'plugin::comments.comment';
@@ -133,6 +133,8 @@ async function resolveTarget(
 /**
  * Stores a remote reply as a comment on the article it answers. It always
  * enters as `PENDING`: the content is untrusted and a moderator approves it.
+ * Only the default locale is federated, so the reply belongs to that version
+ * of the article and is stored in its locale, where the frontend asks for it.
  */
 export async function ingestReply(
   strapi: Core.Strapi,
@@ -155,6 +157,7 @@ export async function ingestReply(
     data: {
       content,
       related: `${ARTICLE_UID}:${target.articleId}`,
+      locale: await getDefaultLocale(strapi),
       approvalStatus: 'PENDING',
       isAdminComment: false,
       authorId: reply.actorId,

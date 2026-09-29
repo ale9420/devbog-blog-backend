@@ -177,6 +177,39 @@ describe('Fediverse federation (Phase 3: replies as moderated comments)', () => 
       expect(comment.isAdminComment).toBeFalsy();
     });
 
+    it('stores replies in the federated (default) locale, where the frontend asks for them', async () => {
+      const article = await publishedArticle();
+      const remote = await newRemote();
+      const defaultLocale = await strapi.plugin('i18n').service('locales').getDefaultLocale();
+      const otherLocale = defaultLocale === 'es' ? 'en' : 'es';
+
+      const parentNote = await reply(remote, {
+        inReplyTo: articleUri(article.documentId),
+        content: '<p>localized parent</p>',
+      });
+      const parent = await waitUntil(() => findComment(parentNote));
+      const childNote = await reply(remote, { inReplyTo: parentNote, content: '<p>child</p>' });
+      const child = await waitUntil(() => findComment(childNote));
+
+      expect(parent.locale).toBe(defaultLocale);
+      expect(child.locale).toBe(defaultLocale);
+
+      await strapi
+        .documents(COMMENT_UID)
+        .update({ documentId: parent.documentId, data: { approvalStatus: 'APPROVED' } });
+      const relation = `${ARTICLE_UID}:${article.documentId}`;
+      const contentsIn = async (locale) => {
+        const res = await request(strapi.server.httpServer)
+          .get(`/api/comments/${relation}/flat?locale=${locale}`)
+          .expect(200);
+        const items = Array.isArray(res.body) ? res.body : res.body.data;
+        return items.map((item) => item.content);
+      };
+
+      expect(await contentsIn(defaultLocale)).toContain('localized parent');
+      expect(await contentsIn(otherLocale)).not.toContain('localized parent');
+    });
+
     it('attaches replies that address the article by its frontend url', async () => {
       const article = await publishedArticle();
       const remote = await newRemote();

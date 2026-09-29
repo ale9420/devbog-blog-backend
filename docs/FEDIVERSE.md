@@ -183,6 +183,7 @@ Fedify needs a `kv` for caches and inbox idempotency. **MVP: `MemoryKvStore`** â
 | `authorId`             | Remote actor URI (stable identity). `authorEmail` is never set: the plugin exposes it publicly                                |
 | `threadOf`             | Resolved parent (see above), else `null`                                                                                      |
 | `approvalStatus`       | `PENDING` â€” set explicitly; the plugin's public API would show it, so a global middleware hides it until a moderator approves |
+| `locale`               | The default (federated) locale; the frontend reads comments per locale (`?locale=`), and only that version federates          |
 | `fediverseUri`         | Note object id (dedupe key)                                                                                                   |
 | `fediverseActorHandle` | `@user@host`                                                                                                                  |
 
