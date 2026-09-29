@@ -31,7 +31,7 @@ npm run test:coverage  # Run Jest with coverage report
 
 ### Node.js Requirements
 
-- **Node**: `>=20.0.0 <=24.x.x`
+- **Node**: `>=20.0.0 <=24.x.x` (production image and CI run Node 22; `.nvmrc` pins it for local dev and Nixpacks staging builds)
 - **npm**: `>=6.0.0`
 
 ---
