@@ -149,16 +149,20 @@ If the new container fails health checks, Dokploy automatically rolls back to th
 
 Multi-stage build optimized for production:
 
-1. **Base stage**: Node 20 Alpine with production environment
+1. **Base stage**: Node 22 Alpine with production environment
 2. **Deps stage**: Installs production dependencies only
-3. **Build stage**: Installs all dependencies and builds Strapi
+3. **Build stage**: Installs all dependencies (`--include=dev`, since `NODE_ENV=production` would otherwise skip the esbuild/typescript the build needs) and builds Strapi
 4. **Production stage**:
    - Copies compiled JavaScript from `dist/config` and `dist/src` (not TypeScript source)
    - Copies admin panel build from `dist/build` (required for `/admin` UI)
+   - Copies only the fediverse plugin's esbuild bundle (`dist/`) and its `package.json`
    - Copies `database/` and `scripts/` directories (already JavaScript)
-   - Installs `curl` for health checks
+   - Installs `tini` (PID 1, forwards SIGTERM to node on redeploys) and `su-exec`
+   - Runs `docker-entrypoint.sh`, which fixes the ownership of `/app/public/uploads` and `/app/.tmp` (bind mounts created as root on the host) and then starts node as the unprivileged `node` user
    - Exposes port 1337
-   - Defines health check
+   - Defines health check with busybox `wget` (no `curl` in the image)
+
+npm downloads use a BuildKit cache mount, so the Dockerfile needs BuildKit (the default in `docker buildx`, which CI uses, and in Podman).
 
 **Why multi-stage?**
 
@@ -178,7 +182,7 @@ Excludes unnecessary files from the Docker image:
 - `.git` (not needed at runtime)
 - `.env` files (secrets injected via Dokploy)
 - `public/uploads` (mounted as volume)
-- Test/coverage files
+- Test/coverage files, `tests/`, `docs/`, `.github/` and agent tooling (`.claude/`, `.mcp.json`, `.playwright-mcp/`)
 
 ### GitHub Actions Workflow
 
@@ -247,11 +251,15 @@ Two volumes are required for proper operation:
 
 **Note:** The Dockerfile creates both directories at build time as a fallback, so the container can start even if volume mounts aren't configured yet. However, without the volume mounts, uploaded files will be lost on each redeployment.
 
+The app runs as the `node` user (uid 1000). The entrypoint starts as root only to `chown` these two directories when their owner isn't `node` (the first deploy after a host directory was created by root), then drops privileges.
+
 **Health Check (Advanced → Swarm Settings):**
+
+The image has no `curl`: a health check override that still calls `curl` marks every container unhealthy and Dokploy rolls the deploy back. Use busybox `wget`, as the image's own `HEALTHCHECK` does:
 
 ```json
 {
-  "Test": ["CMD", "curl", "-f", "http://localhost:1337/_health"],
+  "Test": ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:1337/_health"],
   "Interval": 30000000000,
   "Timeout": 10000000000,
   "StartPeriod": 60000000000,

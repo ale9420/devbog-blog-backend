@@ -28,6 +28,18 @@ import { getActorHandle, type Actor, type DocumentLoader } from '@fedify/fedify/
 import { createMiddleware } from '@fedify/koa';
 
 import pkg from '../../package.json';
+import { ACTOR_IDENTIFIER, ACTOR_USERNAME, ACTOR_USERNAMES } from './constants/actor';
+import {
+  ACTOR_PATH,
+  ARTICLE_PATH,
+  FEDERATION_PREFIXES,
+  FOLLOWERS_PATH,
+  INBOX_PATH,
+  NODEINFO_PATH,
+  OUTBOX_PATH,
+  SHARED_INBOX_PATH,
+} from './constants/paths';
+import { ARTICLE_UID } from './constants/uids';
 import {
   buildArticle,
   buildArticleActivity,
@@ -35,14 +47,10 @@ import {
   listPublishedArticles,
 } from './services/articles';
 import { resolveArticleId } from './services/articles';
-import { getActorProfile, type ActorProfileField } from './services/actor-profile';
+import { getActorProfile } from './services/actor-profile';
 import { getActorKeyPairs } from './services/keys';
-import {
-  recordInteraction,
-  removeInteraction,
-  type InteractionType,
-} from './services/interactions';
-import { ingestReply, removeReply, updateReply, type ReplyContext } from './services/replies';
+import { recordInteraction, removeInteraction } from './services/interactions';
+import { ingestReply, removeReply, updateReply } from './services/replies';
 import {
   countFollowers,
   isActorBlocked,
@@ -50,35 +58,11 @@ import {
   recordFollower,
   removeFollower,
 } from './services/followers';
-
-export type FediverseContextData = {
-  strapi: Core.Strapi;
-};
-
-/**
- * The actor's internal identifier: the path segment of every actor URI
- * (`/fediverse/user/devbog`). Remote servers key the account and its
- * followers by that URI, so it must never change.
- */
-export const ACTOR_IDENTIFIER = process.env.FEDIVERSE_ACTOR_IDENTIFIER ?? 'devbog';
-
-/**
- * The `user` of the public handle `@user@domain` (`preferredUsername`).
- * Unlike the identifier it can change: WebFinger maps it to the identifier,
- * so the account keeps its URI and followers.
- */
-export const ACTOR_USERNAME = process.env.FEDIVERSE_ACTOR_USERNAME ?? 'bogdev';
-
-/** Usernames WebFinger resolves to the blog: the handle, and the identifier as a former one. */
-export const ACTOR_USERNAMES = [...new Set([ACTOR_USERNAME, ACTOR_IDENTIFIER])];
-
-export const ACTOR_PATH = '/fediverse/user/{identifier}';
-export const INBOX_PATH = '/fediverse/user/{identifier}/inbox';
-export const SHARED_INBOX_PATH = '/fediverse/inbox';
-export const FOLLOWERS_PATH = '/fediverse/user/{identifier}/followers';
-export const NODEINFO_PATH = '/nodeinfo/2.1';
-export const OUTBOX_PATH = '/fediverse/user/{identifier}/outbox';
-export const ARTICLE_PATH = '/fediverse/articles/{documentId}';
+import type { ActorProfileField } from './types/actor-profile';
+import type { FediverseContextData } from './types/federation';
+import type { InteractionType } from './types/interactions';
+import type { ReplyContext } from './types/replies';
+import { escapeHtml } from './utils/html';
 
 const OUTBOX_PAGE_SIZE = 20;
 
@@ -190,14 +174,6 @@ async function receiveInteraction(
 }
 
 type Logger = Pick<Core.Strapi['log'], 'error'>;
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 /** Mastodon renders a PropertyValue's value as HTML, so the URL becomes a link. */
 function profileField(field: ActorProfileField): PropertyValue {
@@ -324,7 +300,7 @@ export function createFediverseFederation(log?: Logger): Federation<FediverseCon
 
     let localPosts = 0;
     try {
-      localPosts = await strapi.documents('api::article.article').count({ status: 'published' });
+      localPosts = await strapi.documents(ARTICLE_UID).count({ status: 'published' });
     } catch (error) {
       strapi.log.warn('[fediverse] failed to count published articles for NodeInfo', { error });
     }
@@ -577,9 +553,6 @@ export function getFederation(strapi: Core.Strapi): Federation<FediverseContextD
   }
   return federation;
 }
-
-// Everything Fedify can answer lives under these prefixes.
-const FEDERATION_PREFIXES = ['/fediverse/', '/.well-known/', '/nodeinfo/'];
 
 function isFederationPath(path: string): boolean {
   return FEDERATION_PREFIXES.some((prefix) => path.startsWith(prefix));

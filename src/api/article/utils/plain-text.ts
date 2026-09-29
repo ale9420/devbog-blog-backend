@@ -3,13 +3,8 @@
  * words a reader sees (including code) and drops Markdown and HTML syntax.
  */
 
+import type { BodyBlock } from '../../../types/blocks';
 import { CITATION_PATTERN } from './citations';
-
-interface BodyBlock {
-  __component?: string;
-  body?: string | null;
-  title?: string | null;
-}
 
 /** Hard cap so a huge article can't bloat every row it is copied into. */
 export const MAX_PLAIN_TEXT_LENGTH = 100_000;

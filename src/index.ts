@@ -6,10 +6,8 @@ import { backfillCommentLocale } from './migrations/comment-locale';
 import { consolidateCategories, hasChanges } from './migrations/consolidate-categories';
 import { grantPublicTagPermissions } from './migrations/public-tag-permissions';
 import { migrateSliderItems } from './migrations/slider-items';
+import { ABOUT_UID, ARTICLE_UID } from './constants/uids';
 import { assertImageCreditsValid } from './utils/image-credit';
-
-const ARTICLE_UID = 'api::article.article';
-const ABOUT_UID = 'api::about.about';
 
 export default {
   /**

@@ -1,9 +1,9 @@
 import type { Core } from '@strapi/strapi';
 
-import { ARTICLE_UID, findPublishedArticle, getDefaultLocale, resolveArticleId } from './articles';
+import { ARTICLE_UID, COMMENT_UID } from '../constants/uids';
+import type { IncomingReply, IngestResult, ReplyContext } from '../types/replies';
+import { findPublishedArticle, getDefaultLocale, resolveArticleId } from './articles';
 import { isActorBlocked } from './followers';
-
-export const COMMENT_UID = 'plugin::comments.comment';
 
 const MAX_CONTENT_LENGTH = 5000;
 
@@ -57,29 +57,6 @@ export function stripLeadingMentions(text: string, usernames: string | string[])
 export function toCommentContent(html: string, usernames: string | string[]): string {
   return stripLeadingMentions(htmlToPlainText(html), usernames).slice(0, MAX_CONTENT_LENGTH);
 }
-
-export interface IncomingReply {
-  /** The remote Note's id. */
-  uri: string;
-  /** What the Note replies to (`inReplyTo`). */
-  inReplyTo: string;
-  contentHtml: string;
-  actorId: string;
-  handle: string | null;
-  name: string | null;
-  avatar: string | null;
-}
-
-export interface ReplyContext {
-  /** Usernames the blog is mentioned by: its current handle and any former one. */
-  actorUsernames: string[];
-  /** Maps one of our ActivityPub article ids to its documentId, or null. */
-  parseArticleUri(uri: string): string | null;
-}
-
-export type IngestResult =
-  | { status: 'applied'; documentId: string }
-  | { status: 'ignored'; reason: string };
 
 interface CommentRow {
   documentId: string;

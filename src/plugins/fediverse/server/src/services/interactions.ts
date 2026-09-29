@@ -1,17 +1,8 @@
 import type { Core } from '@strapi/strapi';
 
+import { INTERACTION_UID } from '../constants/uids';
+import type { InteractionInput, InteractionType } from '../types/interactions';
 import { listFollowers } from './followers';
-
-export const INTERACTION_UID = 'plugin::fediverse.interaction';
-
-export type InteractionType = 'like' | 'boost';
-
-export interface InteractionInput {
-  type: InteractionType;
-  actorId: string;
-  handle?: string | null;
-  articleDocumentId: string;
-}
 
 // The article is referenced by documentId rather than a relation: articles are
 // draft-and-publish + localized, so a relation would point at one specific

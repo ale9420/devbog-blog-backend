@@ -1,7 +1,6 @@
 import type { Core } from '@strapi/strapi';
+import { ARTICLE_UID } from '../../../constants/uids';
 import { assertReferencesValid } from './citations';
-
-const ARTICLE_UID = 'api::article.article';
 
 interface ArticleRow {
   locale?: string | null;
