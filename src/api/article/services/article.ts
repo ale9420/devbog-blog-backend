@@ -3,9 +3,8 @@
  */
 
 import { factories } from '@strapi/strapi';
+import { ARTICLE_UID } from '../../../constants/uids';
 import { snippetAround } from '../utils/plain-text';
-
-const ARTICLE_UID = 'api::article.article';
 
 export const SEARCH_MIN_LENGTH = 3;
 export const SEARCH_DEFAULT_LIMIT = 10;

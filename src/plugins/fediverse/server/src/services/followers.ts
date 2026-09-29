@@ -1,24 +1,7 @@
 import type { Core } from '@strapi/strapi';
 
-const FOLLOWER_UID = 'plugin::fediverse.follower';
-
-export interface FollowerRecord {
-  documentId: string;
-  actorId: string;
-  handle: string | null;
-  name: string | null;
-  inbox: string | null;
-  avatar: string | null;
-  blocked: boolean;
-}
-
-export interface FollowerInput {
-  actorId: string;
-  handle?: string | null;
-  name?: string | null;
-  inbox?: string | null;
-  avatar?: string | null;
-}
+import { FOLLOWER_UID } from '../constants/uids';
+import type { FollowerInput, FollowerRecord } from '../types/followers';
 
 interface FollowerRow {
   documentId: string;

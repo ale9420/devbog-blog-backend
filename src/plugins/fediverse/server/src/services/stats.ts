@@ -1,11 +1,10 @@
 import type { Core } from '@strapi/strapi';
 
+import { ARTICLE_UID, COMMENT_UID, INTERACTION_UID } from '../constants/uids';
+import type { ArticleStats, RankingOptions, RankingPage } from '../types/stats';
 import { getDefaultLocale } from './articles';
 import { listFollowers } from './followers';
-import { INTERACTION_UID } from './interactions';
-import { COMMENT_UID } from './replies';
 
-const ARTICLE_UID = 'api::article.article';
 /** Comments point at their article as `api::article.article:<documentId>`. */
 const RELATED_PREFIX = `${ARTICLE_UID}:`;
 
@@ -13,33 +12,6 @@ export const BATCH_MAX_IDS = 50;
 export const RANKING_DEFAULT_PAGE_SIZE = 6;
 export const RANKING_MAX_PAGE_SIZE = 50;
 export const RANKING_SEARCH_MIN_LENGTH = 3;
-
-export interface ArticleStats {
-  likes: number;
-  boosts: number;
-  replies: number;
-}
-
-export interface RankedArticle extends ArticleStats {
-  documentId: string;
-}
-
-export interface RankingOptions {
-  page: number;
-  pageSize: number;
-  locale?: string;
-  /** Category slug. */
-  category?: string;
-  /** Tag slug. */
-  tag?: string;
-  /** Text the title must contain, case-insensitive. */
-  search?: string;
-}
-
-export interface RankingPage {
-  data: RankedArticle[];
-  meta: { pagination: { page: number; pageSize: number; pageCount: number; total: number } };
-}
 
 type Knex = Core.Strapi['db']['connection'];
 type QueryBuilder = ReturnType<Knex>;

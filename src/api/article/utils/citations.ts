@@ -6,11 +6,7 @@
  */
 
 import { errors } from '@strapi/utils';
-
-interface BodyBlock {
-  __component?: string;
-  body?: string | null;
-}
+import type { BodyBlock } from '../../../types/blocks';
 
 interface ReferenceEntry {
   key?: string | null;

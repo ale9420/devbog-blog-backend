@@ -1,7 +1,7 @@
 import type { Core } from '@strapi/strapi';
+import { COMMENTS_API_PREFIX } from '../constants/comments';
 
 const HIDDEN_STATUSES = new Set(['PENDING', 'REJECTED']);
-const COMMENTS_API_PREFIX = '/api/comments/';
 
 function isHidden(value: unknown): boolean {
   return (

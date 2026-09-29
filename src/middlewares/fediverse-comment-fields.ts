@@ -1,7 +1,6 @@
 import type { Core } from '@strapi/strapi';
-
-const COMMENT_UID = 'plugin::comments.comment';
-const COMMENTS_API_PREFIX = '/api/comments/';
+import { COMMENTS_API_PREFIX } from '../constants/comments';
+import { COMMENT_UID } from '../constants/uids';
 
 interface FediverseFields {
   fediverseUri: string | null;

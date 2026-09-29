@@ -1,11 +1,7 @@
 import type { Core } from '@strapi/strapi';
 
-export interface TrackedLifecycleEvent {
-  action: string;
-  uid: string;
-  documentId: string | undefined;
-  recordedAt: string;
-}
+import { ARTICLE_UID } from '../constants/uids';
+import type { TrackedLifecycleEvent } from '../types/lifecycle';
 
 interface EntryEvent {
   model?: string;
@@ -13,7 +9,6 @@ interface EntryEvent {
   entry?: { documentId?: string } | null;
 }
 
-const ARTICLE_UID = 'api::article.article';
 const PUBLISH_EVENT = 'entry.publish';
 const UNPUBLISH_EVENT = 'entry.unpublish';
 

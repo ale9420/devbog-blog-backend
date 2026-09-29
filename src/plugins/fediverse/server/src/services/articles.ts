@@ -13,28 +13,12 @@ import {
   type Activity,
 } from '@fedify/fedify/vocab';
 
-export const ARTICLE_UID = 'api::article.article';
+import { CREDIT_KINDS, LICENSES } from '../constants/licenses';
+import { ARTICLE_UID } from '../constants/uids';
+import type { ArticleRecord, MediaRecord } from '../types/articles';
+import { escapeHtml } from '../utils/html';
 
 const FEDERATED_STORE_KEY = 'federatedArticles';
-
-export interface ArticleRecord {
-  documentId: string;
-  title: string;
-  description: string;
-  slug: string;
-  locale: string | null;
-  publishedAt: string;
-  updatedAt: string | null;
-  image: MediaRecord | null;
-}
-
-interface MediaRecord {
-  url: string;
-  mime: string | null;
-  alternativeText: string | null;
-  /** Attribution line (HTML) owed by the image's license, when it has a credit. */
-  creditHtml: string | null;
-}
 
 /** `shared.image-credit` of the cover. */
 interface ImageCreditRow {
@@ -73,48 +57,6 @@ const ARTICLE_POPULATE = {
   coverCredit: true,
   seo: { populate: { metaImage: true } },
 };
-
-const CREDIT_KINDS: Record<string, { es: string; en: string }> = {
-  photo: { es: 'Foto', en: 'Photo' },
-  illustration: { es: 'Ilustración', en: 'Illustration' },
-  diagram: { es: 'Diagrama', en: 'Diagram' },
-  screenshot: { es: 'Captura', en: 'Screenshot' },
-};
-
-const LICENSES: Record<string, { label: { es: string; en: string }; url?: string }> = {
-  'own-work': { label: { es: 'obra propia', en: 'own work' } },
-  cc0: {
-    label: { es: 'CC0', en: 'CC0' },
-    url: 'https://creativecommons.org/publicdomain/zero/1.0/',
-  },
-  'public-domain': { label: { es: 'dominio público', en: 'public domain' } },
-  'cc-by-4.0': {
-    label: { es: 'CC BY 4.0', en: 'CC BY 4.0' },
-    url: 'https://creativecommons.org/licenses/by/4.0/',
-  },
-  'cc-by-sa-4.0': {
-    label: { es: 'CC BY-SA 4.0', en: 'CC BY-SA 4.0' },
-    url: 'https://creativecommons.org/licenses/by-sa/4.0/',
-  },
-  'cc-by-nc-4.0': {
-    label: { es: 'CC BY-NC 4.0', en: 'CC BY-NC 4.0' },
-    url: 'https://creativecommons.org/licenses/by-nc/4.0/',
-  },
-  unsplash: {
-    label: { es: 'Licencia Unsplash', en: 'Unsplash License' },
-    url: 'https://unsplash.com/license',
-  },
-  permission: { label: { es: 'uso con permiso', en: 'used with permission' } },
-  other: { label: { es: 'otra licencia', en: 'other license' } },
-};
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 /**
  * Human-facing URL of an article on the frontend (`FRONTEND_URL` +

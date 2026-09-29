@@ -5,20 +5,7 @@
  */
 
 import { errors } from '@strapi/utils';
-
-interface ImageCredit {
-  license?: string | null;
-  author?: string | null;
-  authorUrl?: string | null;
-  sourceUrl?: string | null;
-  licenseUrl?: string | null;
-}
-
-interface BodyBlock {
-  __component?: string;
-  credit?: ImageCredit | null;
-  items?: { credit?: ImageCredit | null }[] | null;
-}
+import type { BodyBlock, ImageCredit } from '../types/blocks';
 
 /** Licenses whose terms require naming the author and linking the work. */
 export const ATTRIBUTION_LICENSES = ['cc-by-4.0', 'cc-by-sa-4.0', 'cc-by-nc-4.0'];

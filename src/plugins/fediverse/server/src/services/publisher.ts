@@ -2,10 +2,10 @@ import type { Core } from '@strapi/strapi';
 
 import { PUBLIC_COLLECTION, Update, type Activity } from '@fedify/fedify/vocab';
 
-import { ACTOR_IDENTIFIER, buildActor, getFederation } from '../federation';
-import { GLOBAL_UID } from './actor-profile';
+import { ACTOR_IDENTIFIER } from '../constants/actor';
+import { ARTICLE_UID, GLOBAL_UID } from '../constants/uids';
+import { buildActor, getFederation } from '../federation';
 import {
-  ARTICLE_UID,
   buildArticleActivity,
   buildDeleteActivity,
   findPublishedArticle,

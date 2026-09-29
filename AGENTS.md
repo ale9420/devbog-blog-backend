@@ -54,12 +54,26 @@ npm run test:coverage  # Run Jest with coverage report
 │   │       ├── routes/<name>.ts
 │   │       └── services/<name>.ts
 │   ├── components/      # Reusable components
+│   ├── constants/       # Shared constants (content type UIDs, API prefixes)
 │   ├── extensions/      # Plugin extensions
+│   ├── middlewares/     # Global Koa middlewares
+│   ├── migrations/      # One-off data migrations run from bootstrap
+│   ├── plugins/         # Local plugins (fediverse: own constants/, types/, utils/)
+│   ├── types/           # Shared TypeScript types
+│   ├── utils/           # Shared helpers
 │   └── index.ts         # Application lifecycle hooks
 ├── data/                # Seed data and uploads
 ├── scripts/             # Utility scripts
 └── public/              # Static assets
 ```
+
+### Where code goes
+
+- **`constants/`, `types/`, `utils/`** hold what more than one file uses, or configuration-like values (content type UIDs, route prefixes, license tables). Import UIDs from `constants/uids.ts` instead of repeating `'api::article.article'`.
+- Code specific to one domain stays next to it: `src/api/article/utils/` (citations, plain text), search limits in the article service.
+- A type that is a service's contract (its inputs and outputs) goes in `types/`; row shapes private to one query stay in that file.
+- `src/migrations/` is self-contained on purpose: each migration keeps its own constants so it keeps working after the code it migrated away from changes.
+- The fediverse plugin mirrors this layout under `src/plugins/fediverse/server/src/` and **never imports from the root `src/`**: it is a separate TypeScript project bundled by esbuild.
 
 ---
 
