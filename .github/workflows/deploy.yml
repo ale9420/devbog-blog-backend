@@ -63,9 +63,14 @@ jobs:
             echo "application_id=${{ secrets.DOKPLOY_STAGING_APPLICATION_ID }}" >> "$GITHUB_OUTPUT"
           fi
 
+      # -f fails the job when Dokploy rejects the call; without it a 401/404/5xx still passed.
       - name: Trigger Dokploy deployment
+        env:
+          DOKPLOY_SERVER_URL: ${{ secrets.DOKPLOY_SERVER_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APPLICATION_ID: ${{ steps.app.outputs.application_id }}
         run: |
-          curl -X POST "${{ secrets.DOKPLOY_SERVER_URL }}/api/application.deploy" \
-            -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}" \
+          curl -fsS --retry 3 --retry-all-errors -X POST "${DOKPLOY_SERVER_URL%/}/api/application.deploy" \
+            -H "x-api-key: ${DOKPLOY_API_KEY}" \
             -H "Content-Type: application/json" \
-            -d '{"applicationId": "${{ steps.app.outputs.application_id }}"}'
+            -d "{\"applicationId\": \"${DOKPLOY_APPLICATION_ID}\"}"
