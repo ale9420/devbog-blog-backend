@@ -102,6 +102,15 @@ Reading path: each category has an ordered list of articles, chosen by the edito
 GET /api/articles?locale=es&filters[category][key][$eq]=privacidad&filters[pathOrder][$notNull]=true&sort=pathOrder:asc
 ```
 
+Tags: `api::tag.tag`, many-to-many with articles (`article.tags` ↔ `tag.articles`). Like categories, tags are localized: `name` changes with `locale` (`Privacidad` / `Privacy`), while `slug` is shared by every locale, so a `?tag=<slug>` filter survives a language switch. The public role gets `find`/`findOne` on tags at every boot (`src/migrations/public-tag-permissions.ts`), because `populate[tags]` fails the whole request without it.
+
+```http
+GET /api/articles?locale=es&filters[tags][slug][$eq]=vue&populate[tags][fields][0]=name&populate[tags][fields][1]=slug
+GET /api/tags?locale=es&fields[0]=name&fields[1]=slug&pagination[pageSize]=100&populate[articles][fields][0]=id&populate[articles][filters][locale][$eq]=es
+```
+
+`populate[articles]` on a tag returns only published articles, so its length is the tag's count of visible articles.
+
 "N of M read" takes M from `meta.pagination.total`; which ones are read is tracked by the frontend.
 
 References: an article's sources are the repeatable `references` component (`shared.reference`, shared by every locale), returned only with `populate`:
@@ -135,6 +144,7 @@ The seed script (`scripts/seed.js`) grants read access for public consumers:
 await setPublicPermissions({
   article: ['find', 'findOne'],
   category: ['find', 'findOne'],
+  // tag: ['find', 'findOne'] is granted at bootstrap instead (see Tags above)
   author: ['find', 'findOne'],
   global: ['find', 'findOne'],
   about: ['find', 'findOne'],

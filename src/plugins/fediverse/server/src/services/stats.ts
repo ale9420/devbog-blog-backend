@@ -30,6 +30,8 @@ export interface RankingOptions {
   locale?: string;
   /** Category slug. */
   category?: string;
+  /** Tag slug. */
+  tag?: string;
   /** Text the title must contain, case-insensitive. */
   search?: string;
 }
@@ -139,7 +141,7 @@ const toNumber = (value: unknown) => Number(value ?? 0);
 async function filteredDocumentIds(
   strapi: Core.Strapi,
   locale: string,
-  { category, search }: Pick<RankingOptions, 'category' | 'search'>
+  { category, tag, search }: Pick<RankingOptions, 'category' | 'tag' | 'search'>
 ): Promise<string[]> {
   const rows = (await strapi.db.query(ARTICLE_UID).findMany({
     select: ['documentId', 'title'],
@@ -147,6 +149,7 @@ async function filteredDocumentIds(
       locale,
       publishedAt: { $notNull: true },
       ...(category ? { category: { slug: { $eq: category } } } : {}),
+      ...(tag ? { tags: { slug: { $eq: tag } } } : {}),
       ...(search ? { title: { $containsi: search } } : {}),
     },
   })) as { documentId: string; title: string | null }[];
@@ -206,20 +209,20 @@ export async function statsForArticles(
  * Published articles in `locale` ordered by likes + boosts + replies, newest
  * first on ties. Articles without interactions come last, so paging covers the
  * whole blog. One aggregate query per page, whatever the number of articles.
- * `category` and `search` narrow the list before ranking, so pages stay
+ * `category`, `tag` and `search` narrow the list before ranking, so pages stay
  * consistent with the blog filters.
  */
 export async function rankArticles(
   strapi: Core.Strapi,
-  { page, pageSize, locale, category, search }: RankingOptions
+  { page, pageSize, locale, category, tag, search }: RankingOptions
 ): Promise<RankingPage> {
   const knex = strapi.db.connection;
   const article = model(strapi, ARTICLE_UID);
   const resolvedLocale = locale || (await getDefaultLocale(strapi));
   const blocked = await blockedActorIds(strapi);
-  const filtered = Boolean(category || search);
+  const filtered = Boolean(category || tag || search);
   const matching = filtered
-    ? await filteredDocumentIds(strapi, resolvedLocale, { category, search })
+    ? await filteredDocumentIds(strapi, resolvedLocale, { category, tag, search })
     : [];
   const articles = () => {
     const query = publishedArticles(strapi, resolvedLocale);

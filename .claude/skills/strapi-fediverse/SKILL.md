@@ -48,7 +48,7 @@ The plugin is its own TypeScript project bundled by esbuild (`npm run build:fedi
 
 ## Endpoints
 
-Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/user/:id` (actor), `/fediverse/user/:id/{inbox,outbox,followers}`, `/fediverse/inbox`, `/fediverse/articles/:documentId`. Public Strapi routes (aggregates only, cached 60 s where noted in `docs/FEDIVERSE.md`): `GET /api/fediverse/articles/:documentId/stats` → `{ likes, boosts }` (404 for unpublished); `GET /api/fediverse/articles/stats?documentIds=a,b,c` → `{ [documentId]: { likes, boosts, replies } }` (max 50); `GET /api/fediverse/articles/ranking?page&pageSize&locale` → most discussed first.
+Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`, `/fediverse/user/:id` (actor), `/fediverse/user/:id/{inbox,outbox,followers}`, `/fediverse/inbox`, `/fediverse/articles/:documentId`. Public Strapi routes (aggregates only, cached 60 s where noted in `docs/FEDIVERSE.md`): `GET /api/fediverse/articles/:documentId/stats` → `{ likes, boosts }` (404 for unpublished); `GET /api/fediverse/articles/stats?documentIds=a,b,c` → `{ [documentId]: { likes, boosts, replies } }` (max 50); `GET /api/fediverse/articles/ranking?page&pageSize&locale&category&tag&search` → most discussed first.
 
 ## How it behaves
 
