@@ -178,7 +178,7 @@ const connections = {
 ```
 
 - **Development default**: SQLite
-- **Production**: PostgreSQL (Neon Tech or Cloud SQL)
+- **Production**: PostgreSQL 18, managed by Dokploy on the VPS (`DATABASE_URL`)
 
 ---
 
@@ -232,7 +232,7 @@ Each skill file is at `.claude/skills/<name>/SKILL.md`.
 1. **Jest + Supertest** configured for integration tests against an isolated SQLite database
 2. **ESLint + Prettier** configured — run `npm run lint` and `npm run format` before committing
 3. **Strict TypeScript disabled** (`strict: false` in tsconfig.json)
-4. **Neon Tech PostgreSQL** used for production database
+4. **PostgreSQL 18 managed by Dokploy** used for production database; backups are handled in the `bogdev-infra` repo
 5. **Comments plugin** (`strapi-plugin-comments`) enabled for articles
 6. **GitHub Actions workflows** in `.github/workflows/` run CI on PRs/pushes and deploy on `main`
 7. **MCP servers** are configured in `.mcp.json` (Claude Code asks for approval the first time): `strapi` (`https://api.bogdev.com.co/mcp`) authenticates with a Strapi **Admin API token** (content API tokens from Settings → API Tokens are rejected by `/mcp` with 401) and `dokploy` (`@dokploy/mcp`) with a Dokploy API key. Neither secret is in the repo: they are read from `~/.claude/secrets/strapi-mcp-admin-token` and `~/.claude/secrets/dokploy-api-key` (`.claude/scripts/secret-header.sh` builds the auth header). GitHub and Playwright MCP servers are not configured here; Claude Code has its own plugins for both
