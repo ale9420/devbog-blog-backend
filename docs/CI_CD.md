@@ -368,6 +368,19 @@ Requirements that are easy to miss:
 
 **Rollback:** set `FEDIVERSE_ENABLED=false` and redeploy. The routes and hooks disappear; the tables, followers and key pair stay in the database, and the comments-visibility middleware keeps hiding pending comments. Remote servers that still know the actor get 404s until it is enabled again.
 
+### Analytics Variables (Umami)
+
+Strapi reads the visitors of each article from Umami (self-hosted, in Dokploy) every hour and serves the most read list at `GET /api/articles/popular`. Without `UMAMI_URL` nothing runs and that endpoint answers an empty list. Full behaviour in `docs/ANALYTICS.md`.
+
+```env
+UMAMI_URL=http://<umami app name>:3000   # internal address inside dokploy-network, not the public domain
+UMAMI_WEBSITE_ID=<website id>
+UMAMI_API_KEY=umami_...                  # API key of the View only user `strapi-reader` (password manager)
+UMAMI_SYNC_CRON=0 * * * *                # optional, default shown
+```
+
+Check from the VPS that the container reaches Umami before deploying: the first sync runs right after boot and logs `[umami] synced article visitors: {...}`, or `[umami] sync failed` with the reason.
+
 ### Generating Security Keys
 
 Run locally:

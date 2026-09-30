@@ -6,7 +6,9 @@ import { backfillCommentLocale } from './migrations/comment-locale';
 import { consolidateCategories, hasChanges } from './migrations/consolidate-categories';
 import { grantPublicTagPermissions } from './migrations/public-tag-permissions';
 import { migrateSliderItems } from './migrations/slider-items';
-import { ABOUT_UID, ARTICLE_UID } from './constants/uids';
+import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID } from './constants/uids';
+import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
+import type { UmamiConfig } from './types/article-stat';
 import { assertImageCreditsValid } from './utils/image-credit';
 
 export default {
@@ -78,5 +80,28 @@ export default {
     if (tagPermissions > 0) {
       strapi.log.info(`[tags] granted ${tagPermissions} public read permissions`);
     }
+
+    scheduleUmamiSync(strapi);
   },
 };
+
+/**
+ * Syncs article visitors from Umami every `UMAMI_SYNC_CRON` and once right
+ * after boot, so a deploy doesn't leave the most read list empty for an hour.
+ * A failure only logs: the previous counts stay until the next run.
+ */
+function scheduleUmamiSync(strapi: Core.Strapi) {
+  const config = strapi.config.get<UmamiConfig>('umami');
+  if (!strapi.config.get<boolean>('server.cron.enabled') || !isUmamiConfigured(config)) return;
+
+  const run = async () => {
+    try {
+      const report = await strapi.service(ARTICLE_STAT_UID).sync();
+      strapi.log.info(`[umami] synced article visitors: ${JSON.stringify(report)}`);
+    } catch (error) {
+      strapi.log.warn(`[umami] sync failed, keeping the previous counts: ${error}`);
+    }
+  };
+  strapi.cron.add({ umamiSync: { task: run, options: { rule: config.syncCron } } });
+  void run();
+}

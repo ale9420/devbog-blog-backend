@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "article_stats",
+  "info": {
+    "singularName": "article-stat",
+    "pluralName": "article-stats",
+    "displayName": "Article stat",
+    "description": "Visitors of each article translation, synced hourly from Umami"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    },
+    "content-type-builder": {
+      "visible": false
+    }
+  },
+  "attributes": {
+    "articleDocumentId": {
+      "type": "string",
+      "required": true
+    },
+    "articleLocale": {
+      "type": "string",
+      "required": true
+    },
+    "views": {
+      "type": "integer",
+      "min": 0,
+      "default": 0
+    },
+    "views30d": {
+      "type": "integer",
+      "min": 0,
+      "default": 0
+    },
+    "syncedAt": {
+      "type": "datetime"
+    }
+  }
+}
