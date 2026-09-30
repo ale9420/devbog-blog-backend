@@ -5,11 +5,13 @@ import { backfillArticlePlainText } from './migrations/article-plain-text';
 import { backfillCommentLocale } from './migrations/comment-locale';
 import { consolidateCategories, hasChanges } from './migrations/consolidate-categories';
 import { grantPublicTagPermissions } from './migrations/public-tag-permissions';
+import { ensureEditorRole } from './migrations/editor-role';
 import { migrateSliderItems } from './migrations/slider-items';
 import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID } from './constants/uids';
 import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
 import type { UmamiConfig } from './types/article-stat';
 import { assertImageCreditsValid } from './utils/image-credit';
+import { restrictDraftsToEditors } from './utils/drafts-access';
 
 export default {
   /**
@@ -49,6 +51,9 @@ export default {
       }
       return next();
     });
+
+    // Only editors may read drafts through the content API (?status=draft).
+    restrictDraftsToEditors(strapi);
 
     // Admin API route (admin session required) for the visitors widget on the
     // admin homepage (src/admin). Routes under src/api are always registered as
@@ -96,6 +101,11 @@ export default {
     const tagPermissions = await grantPublicTagPermissions(strapi);
     if (tagPermissions > 0) {
       strapi.log.info(`[tags] granted ${tagPermissions} public read permissions`);
+    }
+
+    const editor = await ensureEditorRole(strapi);
+    if (editor.roleCreated || editor.permissionsGranted > 0) {
+      strapi.log.info(`[roles] editor: ${JSON.stringify(editor)}`);
     }
 
     scheduleUmamiSync(strapi);
