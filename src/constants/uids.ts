@@ -3,3 +3,4 @@
 export const ABOUT_UID = 'api::about.about';
 export const ARTICLE_UID = 'api::article.article';
 export const COMMENT_UID = 'plugin::comments.comment';
+export const ARTICLE_STAT_UID = 'api::article-stat.article-stat';

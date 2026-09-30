@@ -11,6 +11,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server =>
   mcp: {
     enabled: true,
   },
+  // Tasks are added in bootstrap (src/index.ts), each gated by its own config.
+  cron: {
+    enabled: !env.bool('STRAPI_DISABLE_CRON', false),
+  },
 });
 
 export default config;
