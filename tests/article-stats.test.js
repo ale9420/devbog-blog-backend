@@ -33,6 +33,7 @@ describe('Article stats (Umami)', () => {
     process.env.UMAMI_URL = umami.url;
     process.env.UMAMI_WEBSITE_ID = 'site-1';
     process.env.UMAMI_API_KEY = 'umami_test';
+    process.env.UMAMI_PUBLIC_URL = 'https://analytics.example.test';
     await setupStrapi();
 
     const locales = strapi.plugin('i18n').service('locales');
@@ -53,6 +54,7 @@ describe('Article stats (Umami)', () => {
     delete process.env.UMAMI_URL;
     delete process.env.UMAMI_WEBSITE_ID;
     delete process.env.UMAMI_API_KEY;
+    delete process.env.UMAMI_PUBLIC_URL;
   });
 
   beforeEach(() => {
@@ -192,6 +194,73 @@ describe('Article stats (Umami)', () => {
 
     it('rejects an unknown period', async () => {
       await get({ period: '7d' }).expect(400);
+    });
+  });
+
+  describe('admin homepage widget', () => {
+    const summary = () => strapi.service(STAT_UID).summary();
+
+    it('summarises the most read translations of every locale and the site totals', async () => {
+      umami.state.totals = {
+        7: { pageviews: 30, visitors: 10 },
+        30: { pageviews: 120, visitors: 40 },
+      };
+      const result = await summary();
+      expect(result).toMatchObject({
+        configured: true,
+        totals: {
+          last7d: { visitors: 10, pageviews: 30 },
+          last30d: { visitors: 40, pageviews: 120 },
+        },
+        dashboardUrl: 'https://analytics.example.test/websites/site-1',
+      });
+      expect(result.top).toEqual([
+        { documentId: ids.vue, locale: 'en', title: 'Stats vue-basics', views30d: 12 },
+        { documentId: ids.linux, locale: 'en', title: 'Stats linux-hardening', views30d: 5 },
+      ]);
+      expect(result.syncedAt).toBeTruthy();
+    });
+
+    it('keeps the list when Umami fails and only drops the totals', async () => {
+      umami.state.status = 500;
+      const result = await summary();
+      expect(result.totals).toBeNull();
+      expect(result.top).toHaveLength(2);
+    });
+
+    it('serves the summary on the admin API only to signed-in admins', async () => {
+      const server = strapi.server.httpServer;
+      await request(server).get('/article-stats/summary').expect(401);
+      await request(server)
+        .get('/article-stats/summary')
+        .set('Authorization', 'Bearer not-a-token')
+        .expect(401);
+
+      const email = 'stats-admin@example.test';
+      const password = 'Stats-admin-1';
+      const superAdmin = await strapi.service('admin::role').getSuperAdmin();
+      await strapi.service('admin::user').create({
+        email,
+        password,
+        firstname: 'Stats',
+        lastname: 'Admin',
+        isActive: true,
+        roles: [superAdmin.id],
+      });
+      const login = await request(server)
+        .post('/admin/login')
+        .send({ email, password })
+        .expect(200);
+      const token = login.body.data.token ?? login.body.data.accessToken;
+
+      const res = await request(server)
+        .get('/article-stats/summary')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+      expect(res.body.data.top.map((entry) => entry.title)).toEqual([
+        'Stats vue-basics',
+        'Stats linux-hardening',
+      ]);
     });
   });
 
