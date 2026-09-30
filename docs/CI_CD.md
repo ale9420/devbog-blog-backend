@@ -377,6 +377,7 @@ UMAMI_URL=http://<umami app name>:3000   # internal address inside dokploy-netwo
 UMAMI_WEBSITE_ID=<website id>
 UMAMI_API_KEY=umami_...                  # API key of the View only user `strapi-reader` (password manager)
 UMAMI_SYNC_CRON=0 * * * *                # optional, default shown
+UMAMI_PUBLIC_URL=https://analytics.bogdev.com.co   # optional, link in the admin widget
 ```
 
 Check from the VPS that the container reaches Umami before deploying: the first sync runs right after boot and logs `[umami] synced article visitors: {...}`, or `[umami] sync failed` with the reason.

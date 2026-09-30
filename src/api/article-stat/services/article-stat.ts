@@ -7,15 +7,23 @@ import { ARTICLE_STAT_UID, ARTICLE_UID } from '../../../constants/uids';
 import type {
   PopularArticle,
   PopularOptions,
+  StatsSummary,
   SyncReport,
   UmamiConfig,
 } from '../../../types/article-stat';
 import { parseFrontendArticlePath } from '../../../utils/frontend-url';
-import { fetchPathVisitors, isUmamiConfigured, type PathVisitors } from '../utils/umami-client';
+import {
+  fetchPathVisitors,
+  fetchWebsiteTotals,
+  isUmamiConfigured,
+  type PathVisitors,
+} from '../utils/umami-client';
 
 export const POPULAR_DEFAULT_LIMIT = 5;
 export const POPULAR_MAX_LIMIT = 50;
-const RECENT_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const RECENT_WINDOW_MS = 30 * DAY_MS;
+const SUMMARY_TOP = 5;
 
 interface StatRow {
   id: number;
@@ -157,5 +165,65 @@ export default factories.createCoreService(ARTICLE_STAT_UID, ({ strapi }) => ({
       if (data.length >= Math.min(Math.max(1, limit), POPULAR_MAX_LIMIT)) break;
     }
     return { data, locale: resolvedLocale, syncedAt };
+  },
+
+  /**
+   * Admin homepage widget: the most visited translations of the last 30 days
+   * (every locale, from the synced rows) and the whole site's totals for the
+   * last 7 and 30 days, read live from Umami. A failing Umami only drops the totals.
+   */
+  async summary(now = Date.now()): Promise<StatsSummary> {
+    const config = strapi.config.get<UmamiConfig>('umami');
+    const configured = isUmamiConfigured(config);
+
+    const stats = (await strapi.db.query(ARTICLE_STAT_UID).findMany({
+      where: { views30d: { $gt: 0 } },
+      orderBy: [{ views30d: 'desc' }, { id: 'asc' }],
+    })) as StatRow[];
+    const syncedAt = stats.reduce<string | null>(
+      (latest, row) => (row.syncedAt && (!latest || row.syncedAt > latest) ? row.syncedAt : latest),
+      null
+    );
+
+    const titles = new Map<string, string | null>();
+    if (stats.length > 0) {
+      const rows = (await strapi.db.query(ARTICLE_UID).findMany({
+        select: ['documentId', 'locale', 'title'],
+        where: {
+          publishedAt: { $notNull: true },
+          documentId: { $in: stats.map((row) => row.articleDocumentId) },
+        },
+      })) as { documentId: string; locale: string; title: string | null }[];
+      for (const row of rows) titles.set(keyOf(row.documentId, row.locale), row.title);
+    }
+    const top = stats
+      .filter((row) => titles.has(keyOf(row.articleDocumentId, row.articleLocale)))
+      .slice(0, SUMMARY_TOP)
+      .map((row) => ({
+        documentId: row.articleDocumentId,
+        locale: row.articleLocale,
+        title: titles.get(keyOf(row.articleDocumentId, row.articleLocale)) ?? null,
+        views30d: row.views30d ?? 0,
+      }));
+
+    let totals: StatsSummary['totals'] = null;
+    if (configured) {
+      try {
+        const [last7d, last30d] = await Promise.all([
+          fetchWebsiteTotals(config, { startAt: now - 7 * DAY_MS, endAt: now }),
+          fetchWebsiteTotals(config, { startAt: now - RECENT_WINDOW_MS, endAt: now }),
+        ]);
+        totals = { last7d, last30d };
+      } catch (error) {
+        strapi.log.warn(`[umami] could not read the site totals: ${error}`);
+      }
+    }
+
+    const dashboardUrl =
+      configured && config.publicUrl
+        ? new URL(`/websites/${encodeURIComponent(config.websiteId)}`, config.publicUrl).href
+        : null;
+
+    return { configured, top, totals, syncedAt, dashboardUrl };
   },
 }));

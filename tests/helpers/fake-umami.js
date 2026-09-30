@@ -6,12 +6,14 @@ const http = require('http');
  * Minimal Umami for the article-stat tests: answers
  * `GET /api/websites/:id/metrics?type=path` with `allTime` when `startAt=0` and
  * with `recent` otherwise, paginated with `limit`/`offset` like Umami, and
- * records every request. `status` forces an error answer.
+ * `GET /api/websites/:id/stats` with `totals[<days in the range>]`. Records
+ * every request; `status` forces an error answer.
  */
 async function startFakeUmami() {
   const state = {
     allTime: [],
     recent: [],
+    totals: {},
     status: 200,
     requests: [],
   };
@@ -27,6 +29,15 @@ async function startFakeUmami() {
     if (state.status !== 200) {
       res.writeHead(state.status, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ error: 'forced' }));
+      return;
+    }
+    if (/^\/api\/websites\/[^/]+\/stats$/.test(url.pathname)) {
+      const days = Math.round(
+        (Number(url.searchParams.get('endAt')) - Number(url.searchParams.get('startAt'))) /
+          86_400_000
+      );
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(state.totals[days] ?? { pageviews: 0, visitors: 0 }));
       return;
     }
     if (

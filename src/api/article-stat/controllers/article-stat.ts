@@ -28,4 +28,9 @@ export default factories.createCoreController(ARTICLE_STAT_UID, ({ strapi }) => 
       meta: { period: resolvedPeriod, locale: result.locale, syncedAt: result.syncedAt },
     };
   },
+
+  /** GET /article-stats/summary (admin API, see src/index.ts) */
+  async summary() {
+    return { data: await strapi.service(ARTICLE_STAT_UID).summary() };
+  },
 }));

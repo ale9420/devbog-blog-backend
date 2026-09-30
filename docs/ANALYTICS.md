@@ -47,6 +47,12 @@ visitor ──► bogdev.com.co/bd.js, /api/bd ──(Nuxt proxy, x-real-ip)─�
 
 Articles with 0 visitors in the period are left out, and so are articles unpublished since the last sync.
 
+## Admin homepage widget
+
+`src/admin/app.tsx` registers a **Visitors** widget on the admin homepage (`app.widgets.register`, Strapi 5.13+). It shows the site's visitors and page views for the last 7 and 30 days, the 5 most visited article translations of the last 30 days (each one links to its edit view) and when the counts were last synced, plus a link to Umami's dashboard when `UMAMI_PUBLIC_URL` is set.
+
+Its data comes from `GET /article-stats/summary` on the **admin** API (admin session required, `admin::isAuthenticatedAdmin`). Routes under `src/api` are always registered as content API, so this one is added with `strapi.server.routes({ type: 'admin' })` in `register()` (`src/index.ts`). The top list comes from `article_stats`; the totals are read live from Umami (`/api/websites/:id/stats`) and, if Umami fails, the widget still shows the list. The API key never reaches the browser.
+
 ## Configuration
 
 | Variable           | Meaning                                                                                                                                                                               |
@@ -65,4 +71,4 @@ Without `UMAMI_URL`, `UMAMI_WEBSITE_ID` and `UMAMI_API_KEY` the sync never runs.
 
 ## Tests
 
-`tests/article-stats.test.js` runs against `tests/helpers/fake-umami.js`, which answers the metrics endpoint and records requests: path matching per locale, pagination, the API key header, Umami failures, duplicate cleanup and the endpoint. `tests/frontend-url.test.js` covers the path parser.
+`tests/article-stats.test.js` runs against `tests/helpers/fake-umami.js`, which answers the metrics endpoint and records requests: path matching per locale, pagination, the API key header, Umami failures, duplicate cleanup and the endpoint. The widget's summary and its admin route (401 without an admin session) are covered in the same suite. `tests/frontend-url.test.js` covers the path parser.

@@ -13,6 +13,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): UmamiConfig => ({
   // API key of a View only user that reaches the website through a team
   apiKey: env('UMAMI_API_KEY', ''),
   syncCron: env('UMAMI_SYNC_CRON', '0 * * * *'),
+  // Public dashboard, only for the link in the admin widget
+  publicUrl: env('UMAMI_PUBLIC_URL', ''),
 });
 
 export default config;

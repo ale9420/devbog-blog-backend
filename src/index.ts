@@ -49,6 +49,23 @@ export default {
       }
       return next();
     });
+
+    // Admin API route (admin session required) for the visitors widget on the
+    // admin homepage (src/admin). Routes under src/api are always registered as
+    // content API, so this one is added here.
+    strapi.server.routes({
+      type: 'admin',
+      prefix: '/article-stats',
+      routes: [
+        {
+          method: 'GET',
+          path: '/summary',
+          handler: `${ARTICLE_STAT_UID}.summary`,
+          config: { policies: ['admin::isAuthenticatedAdmin'] },
+          info: { apiName: 'article-stat', type: 'admin' },
+        },
+      ],
+    });
   },
 
   /**

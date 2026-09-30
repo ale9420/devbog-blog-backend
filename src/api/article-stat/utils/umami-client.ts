@@ -1,4 +1,4 @@
-import type { UmamiConfig } from '../../../types/article-stat';
+import type { UmamiConfig, WebsiteTotals } from '../../../types/article-stat';
 
 /** Umami's own default page size for metrics. */
 const PAGE_SIZE = 500;
@@ -13,6 +13,37 @@ export interface PathVisitors {
 
 export function isUmamiConfigured(config: UmamiConfig | undefined): config is UmamiConfig {
   return Boolean(config?.url && config.websiteId && config.apiKey);
+}
+
+async function getJson<T>(config: UmamiConfig, url: URL): Promise<T> {
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${config.apiKey}`, Accept: 'application/json' },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    throw new Error(`Umami answered ${response.status} for ${url.pathname}`);
+  }
+  return (await response.json()) as T;
+}
+
+/** Umami 3 answers plain numbers; older versions wrapped them in `{ value }`. */
+function numberOf(value: unknown): number {
+  const raw = value && typeof value === 'object' ? (value as { value?: unknown }).value : value;
+  return Number(raw) || 0;
+}
+
+/** Whole-site visitors and page views in [startAt, endAt] (ms), from `/api/websites/:id/stats`. */
+export async function fetchWebsiteTotals(
+  config: UmamiConfig,
+  range: { startAt: number; endAt: number }
+): Promise<WebsiteTotals> {
+  const url = new URL(`/api/websites/${encodeURIComponent(config.websiteId)}/stats`, config.url);
+  url.search = new URLSearchParams({
+    startAt: String(range.startAt),
+    endAt: String(range.endAt),
+  }).toString();
+  const stats = await getJson<Record<string, unknown>>(config, url);
+  return { visitors: numberOf(stats.visitors), pageviews: numberOf(stats.pageviews) };
 }
 
 /**
@@ -38,15 +69,7 @@ export async function fetchPathVisitors(
       offset: String(offset),
     }).toString();
 
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${config.apiKey}`, Accept: 'application/json' },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    if (!response.ok) {
-      throw new Error(`Umami answered ${response.status} for ${url.pathname}`);
-    }
-
-    const page = (await response.json()) as { x: string; y: number | string }[];
+    const page = await getJson<{ x: string; y: number | string }[]>(config, url);
     for (const row of page) result.push({ path: row.x, visitors: Number(row.y) || 0 });
     if (page.length < PAGE_SIZE) return result;
   }

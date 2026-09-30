@@ -5,6 +5,7 @@ export interface UmamiConfig {
   websiteId: string;
   apiKey: string;
   syncCron: string;
+  publicUrl: string;
 }
 
 /** `30d`: visitors of the last 30 days; `all`: since Umami started counting. */
@@ -35,4 +36,27 @@ export interface SyncReport {
   matchedPaths: number;
   /** Umami paths that aren't an article (home, blog list, about…). */
   otherPaths: number;
+}
+
+export interface WebsiteTotals {
+  visitors: number;
+  pageviews: number;
+}
+
+/** What the admin homepage widget shows. */
+export interface StatsSummary {
+  /** Whether Umami is configured at all. */
+  configured: boolean;
+  /** Most visited article translations of the last 30 days, every locale. */
+  top: {
+    documentId: string;
+    locale: string;
+    title: string | null;
+    views30d: number;
+  }[];
+  /** Whole site, read live from Umami; null when it isn't configured or fails. */
+  totals: { last7d: WebsiteTotals; last30d: WebsiteTotals } | null;
+  syncedAt: string | null;
+  /** Umami's dashboard for the website, when `UMAMI_PUBLIC_URL` is set. */
+  dashboardUrl: string | null;
 }
