@@ -5,6 +5,7 @@ import { backfillArticlePlainText } from './migrations/article-plain-text';
 import { backfillCommentLocale } from './migrations/comment-locale';
 import { consolidateCategories, hasChanges } from './migrations/consolidate-categories';
 import { grantPublicTagPermissions } from './migrations/public-tag-permissions';
+import { revokeSubscriberPermissions } from './migrations/subscriber-permissions';
 import { ensureEditorRole } from './migrations/editor-role';
 import { applyAccountSettings } from './migrations/account-settings';
 import { migrateSliderItems } from './migrations/slider-items';
@@ -102,6 +103,11 @@ export default {
     const tagPermissions = await grantPublicTagPermissions(strapi);
     if (tagPermissions > 0) {
       strapi.log.info(`[tags] granted ${tagPermissions} public read permissions`);
+    }
+
+    const subscriberPermissions = await revokeSubscriberPermissions(strapi);
+    if (subscriberPermissions > 0) {
+      strapi.log.info(`[subscribers] revoked ${subscriberPermissions} role permissions`);
     }
 
     const editor = await ensureEditorRole(strapi);

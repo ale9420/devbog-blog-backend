@@ -284,17 +284,7 @@ async function importAuthors() {
 
 async function importSubscribers() {
   for (const subscriber of subscribers) {
-    const created = await createEntry({ model: 'subscriber', entry: subscriber });
-
-    if (created?.documentId) {
-      try {
-        await strapi.documents('api::subscriber.subscriber').publish({
-          documentId: created.documentId,
-        });
-      } catch (error) {
-        console.error({ subscriber: subscriber.email, error });
-      }
-    }
+    await createEntry({ model: 'subscriber', entry: subscriber });
   }
 }
 
@@ -305,7 +295,6 @@ async function importSeedData() {
     author: ['find', 'findOne'],
     global: ['find', 'findOne'],
     about: ['find', 'findOne'],
-    subscriber: ['create'],
   });
 
   await importCategories();
