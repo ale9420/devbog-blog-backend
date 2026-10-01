@@ -25,4 +25,14 @@ export default factories.createCoreController(ARTICLE_UID, ({ strapi }) => ({
     });
     return { data, meta: { query, count: data.length } };
   },
+
+  /** GET /api/articles/drafts?locale=… (editors only, see routes/03-drafts.ts) */
+  async drafts(ctx) {
+    const { locale } = ctx.query as Record<string, string | undefined>;
+    const data = await strapi.service(ARTICLE_UID).drafts({
+      locale: typeof locale === 'string' && locale ? locale : undefined,
+    });
+    ctx.set('Cache-Control', 'private, no-store');
+    return { data, meta: { count: data.length } };
+  },
 }));

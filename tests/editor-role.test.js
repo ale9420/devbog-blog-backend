@@ -28,6 +28,7 @@ describe('Editor role migration', () => {
   it('creates the Editor role on bootstrap with read-only permissions', async () => {
     expect(role).toMatchObject({ name: 'Editor', type: 'editor' });
     expect(await actionsOf(role.id)).toEqual([
+      'api::article.article.drafts',
       'api::article.article.find',
       'api::article.article.findOne',
       'api::author.author.find',
