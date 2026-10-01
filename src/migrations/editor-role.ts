@@ -11,10 +11,12 @@ const EDITOR = {
 // editing and publishing stays in the admin panel. Tags are included because
 // the frontend populates them on every article and Strapi rejects the whole
 // request when the role can't read a populated type. `user.me` lets the
-// frontend read the session user and its role.
+// frontend read the session user and its role. `drafts` is the pending
+// drafts list (GET /api/articles/drafts).
 const ACTIONS = [
   'api::article.article.find',
   'api::article.article.findOne',
+  'api::article.article.drafts',
   'api::category.category.find',
   'api::category.category.findOne',
   'api::author.author.find',

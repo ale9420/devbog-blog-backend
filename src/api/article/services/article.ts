@@ -5,6 +5,7 @@
 import { factories } from '@strapi/strapi';
 import { ARTICLE_UID } from '../../../constants/uids';
 import { snippetAround } from '../utils/plain-text';
+import type { DraftSummary } from '../../../types/article-drafts';
 
 export const SEARCH_MIN_LENGTH = 3;
 export const SEARCH_DEFAULT_LIMIT = 10;
@@ -30,6 +31,26 @@ interface SearchRow {
   locale: string | null;
   category?: { slug: string | null; name: string | null } | null;
 }
+
+interface DraftRow {
+  documentId: string;
+  title: string | null;
+  slug: string | null;
+  locale: string | null;
+  updatedAt: string;
+  category?: { name: string | null; slug: string | null } | null;
+  author?: { name: string | null } | null;
+}
+
+interface PublishedRow {
+  documentId: string;
+  locale: string | null;
+  updatedAt: string;
+  publishedAt: string;
+}
+
+const versionKey = (row: { documentId: string; locale: string | null }) =>
+  `${row.documentId}:${row.locale ?? ''}`;
 
 export default factories.createCoreService(ARTICLE_UID, ({ strapi }) => ({
   /**
@@ -73,6 +94,55 @@ export default factories.createCoreService(ARTICLE_UID, ({ strapi }) => ({
         ];
       }
       return [];
+    });
+  },
+
+  /**
+   * Drafts with something to review, per document and locale, last edited
+   * first: never published, or edited after publishing (draft `updatedAt`
+   * later than the published one, as the admin's "Modified" status). Drafts
+   * identical to their published version are left out. Called from a
+   * content API route, so the Document Service only serves drafts to editors
+   * (src/utils/drafts-access.ts).
+   */
+  async drafts({ locale }: { locale?: string } = {}): Promise<DraftSummary[]> {
+    const drafts = (await strapi.documents(ARTICLE_UID).findMany({
+      status: 'draft',
+      locale: locale ?? '*',
+      fields: ['title', 'slug', 'locale', 'updatedAt'],
+      populate: { category: { fields: ['name', 'slug'] }, author: { fields: ['name'] } },
+      sort: 'updatedAt:desc',
+    })) as unknown as DraftRow[];
+    if (drafts.length === 0) return [];
+
+    const published = (await strapi.documents(ARTICLE_UID).findMany({
+      status: 'published',
+      locale: locale ?? '*',
+      fields: ['locale', 'updatedAt', 'publishedAt'],
+      filters: { documentId: { $in: [...new Set(drafts.map((draft) => draft.documentId))] } },
+    })) as unknown as PublishedRow[];
+    const publishedByKey = new Map(published.map((row) => [versionKey(row), row]));
+
+    return drafts.flatMap((draft): DraftSummary[] => {
+      const version = publishedByKey.get(versionKey(draft));
+      const modified =
+        version && new Date(draft.updatedAt).getTime() > new Date(version.updatedAt).getTime();
+      if (version && !modified) return [];
+      return [
+        {
+          documentId: draft.documentId,
+          title: draft.title,
+          slug: draft.slug,
+          locale: draft.locale,
+          updatedAt: draft.updatedAt,
+          publishedAt: version?.publishedAt ?? null,
+          state: version ? 'modified' : 'never-published',
+          category: draft.category
+            ? { name: draft.category.name, slug: draft.category.slug }
+            : null,
+          author: draft.author ? { name: draft.author.name } : null,
+        },
+      ];
     });
   },
 }));
