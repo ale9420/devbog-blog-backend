@@ -1,23 +1,25 @@
 'use strict';
 
-async function getPublicRole() {
-  return strapi.query('plugin::users-permissions.role').findOne({
-    where: { type: 'public' },
-  });
+async function getRole(type) {
+  return strapi.query('plugin::users-permissions.role').findOne({ where: { type } });
 }
 
-async function setPublicPermissions(contentType, actions) {
-  const publicRole = await getPublicRole();
+async function getPublicRole() {
+  return getRole('public');
+}
 
-  if (!publicRole) {
-    throw new Error('Public role not found');
+async function setRolePermissions(roleType, contentType, actions) {
+  const role = await getRole(roleType);
+
+  if (!role) {
+    throw new Error(`Role ${roleType} not found`);
   }
 
   const permissionQueries = actions.map((action) =>
     strapi.query('plugin::users-permissions.permission').create({
       data: {
         action: `api::${contentType}.${contentType}.${action}`,
-        role: publicRole.id,
+        role: role.id,
       },
     })
   );
@@ -28,4 +30,8 @@ async function setPublicPermissions(contentType, actions) {
   await strapi.service('plugin::users-permissions.users-permissions').initialize();
 }
 
-module.exports = { getPublicRole, setPublicPermissions };
+async function setPublicPermissions(contentType, actions) {
+  return setRolePermissions('public', contentType, actions);
+}
+
+module.exports = { getRole, getPublicRole, setRolePermissions, setPublicPermissions };
