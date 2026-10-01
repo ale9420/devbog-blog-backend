@@ -39,6 +39,8 @@ describe('Editor role migration', () => {
       'api::tag.tag.findOne',
       'plugin::upload.content-api.find',
       'plugin::upload.content-api.findOne',
+      // Granted by the account settings migration (issue #52).
+      'plugin::users-permissions.user.destroyMe',
       'plugin::users-permissions.user.me',
     ]);
   });

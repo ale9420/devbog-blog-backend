@@ -382,6 +382,21 @@ UMAMI_PUBLIC_URL=https://analytics.bogdev.com.co   # optional, link in the admin
 
 Check from the VPS that the container reaches Umami before deploying: the first sync runs right after boot and logs `[umami] synced article visitors: {...}`, or `[umami] sync failed` with the reason.
 
+### Accounts Variables (email)
+
+Reader accounts need SMTP for the confirmation and password reset emails, and `FRONTEND_URL` for the links inside them. Set `FRONTEND_URL` before the first deploy that includes accounts: the links are written to the Users & Permissions settings once, then edited in the admin panel. Full behaviour in `docs/ACCOUNTS.md`.
+
+```env
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587                               # 465 = implicit TLS
+SMTP_USER=
+SMTP_PASS=
+EMAIL_FROM="BogDev <no-reply@bogdev.com.co>"
+FRONTEND_URL=https://bogdev.com.co          # staging: the staging frontend
+```
+
+After deploying, send a test email from the admin panel (Settings → Email).
+
 ### Generating Security Keys
 
 Run locally:
