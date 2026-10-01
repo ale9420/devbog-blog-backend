@@ -184,6 +184,21 @@ describe('Fediverse federation (Phase 2: article federation)', () => {
       });
     });
 
+    it('serves the published version of an article with unpublished changes', async () => {
+      const draft = await createArticle();
+      await publish(draft.documentId);
+      await strapi.documents(ARTICLE_UID).update({
+        documentId: draft.documentId,
+        data: { title: 'Unpublished edit', description: 'Not yet public.' },
+      });
+
+      const { status, body } = await getJson(`/fediverse/articles/${draft.documentId}`);
+
+      expect(status).toBe(200);
+      expect(body.name).toBe(draft.title);
+      expect(body.content).not.toContain('Not yet public.');
+    });
+
     it('returns 404 for a draft-only article and for unknown ids', async () => {
       const draft = await createArticle();
 
