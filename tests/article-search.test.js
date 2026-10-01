@@ -203,6 +203,28 @@ describe('Article plain text and content search', () => {
       expect(underscore.body.data).toEqual([]);
     });
 
+    it('ignores unpublished edits of a published article', async () => {
+      const article = await publish({
+        title: 'Copias de seguridad con restic',
+        slug: 'copias-restic',
+        blocks: [richText('Guardamos todo con restic.')],
+      });
+      await strapi.documents(ARTICLE_UID).update({
+        documentId: article.documentId,
+        data: {
+          title: 'Copias de seguridad con borgbackup',
+          blocks: [richText('Ahora usamos borgbackup.')],
+        },
+      });
+
+      const edited = await search({ q: 'borgbackup', content: '1' }).expect(200);
+      expect(edited.body.data).toEqual([]);
+
+      const published = await search({ q: 'restic', content: '1' }).expect(200);
+      expect(published.body.data).toHaveLength(1);
+      expect(published.body.data[0].title).toBe('Copias de seguridad con restic');
+    });
+
     it('filters by locale', async () => {
       const res = await search({ q: 'nextcloud', content: '1', locale: 'fr' }).expect(200);
       expect(res.body.data).toEqual([]);
