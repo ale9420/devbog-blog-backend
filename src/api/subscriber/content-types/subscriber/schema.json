@@ -4,21 +4,36 @@
   "info": {
     "singularName": "subscriber",
     "pluralName": "subscribers",
-    "displayName": "Subscriber"
+    "displayName": "Subscriber",
+    "description": "Newsletter subscriptions. Only the frontend server reads and writes them, with its API token."
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
     "email": {
-      "type": "email"
+      "type": "email",
+      "required": true,
+      "unique": true
     },
     "confirmationToken": {
-      "type": "text"
+      "type": "string"
+    },
+    "unsubscribeToken": {
+      "type": "string",
+      "unique": true
     },
     "confirmed": {
-      "type": "boolean"
+      "type": "boolean",
+      "default": false,
+      "required": true
+    },
+    "language": {
+      "type": "enumeration",
+      "enum": ["en", "es"],
+      "default": "en",
+      "required": true
     }
   }
 }

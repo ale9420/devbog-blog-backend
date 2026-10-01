@@ -731,23 +731,30 @@ export interface ApiGlobalGlobal extends Struct.SingleTypeSchema {
 export interface ApiSubscriberSubscriber extends Struct.CollectionTypeSchema {
   collectionName: 'subscribers';
   info: {
+    description: 'Newsletter subscriptions. Only the frontend server reads and writes them, with its API token.';
     displayName: 'Subscriber';
     pluralName: 'subscribers';
     singularName: 'subscriber';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
-    confirmationToken: Schema.Attribute.Text;
-    confirmed: Schema.Attribute.Boolean;
+    confirmationToken: Schema.Attribute.String;
+    confirmed: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private;
-    email: Schema.Attribute.Email;
+    email: Schema.Attribute.Email & Schema.Attribute.Required & Schema.Attribute.Unique;
+    language: Schema.Attribute.Enumeration<['en', 'es']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'en'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::subscriber.subscriber'> &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
+    unsubscribeToken: Schema.Attribute.String & Schema.Attribute.Unique;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private;
   };
@@ -1303,7 +1310,7 @@ export interface PluginUsersPermissionsUser extends Struct.CollectionTypeSchema 
 }
 
 declare module '@strapi/strapi' {
-  export module Public {
+  export namespace Public {
     export interface ContentTypeSchemas {
       'admin::api-token': AdminApiToken;
       'admin::api-token-permission': AdminApiTokenPermission;
