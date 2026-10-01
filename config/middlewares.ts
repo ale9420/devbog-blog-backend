@@ -31,7 +31,11 @@ const config: Core.Config.Middlewares = [
   'strapi::cors',
   'strapi::poweredBy',
   'strapi::query',
-  'strapi::body',
+  {
+    name: 'strapi::body',
+    // DELETE too: DELETE /api/users/me takes the current password in its body.
+    config: { parsedMethods: ['POST', 'PUT', 'PATCH', 'DELETE'] },
+  },
   'strapi::session',
   'strapi::favicon',
   'strapi::public',

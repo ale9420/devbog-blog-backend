@@ -34,6 +34,25 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
         sizeLimit: 250 * 1024 * 1024,
       };
 
+  // Without SMTP_HOST Strapi keeps its default `sendmail` provider, which can't
+  // deliver from a container: account confirmation and reset emails need SMTP.
+  const smtpHost = env('SMTP_HOST');
+  const smtpPort = env.int('SMTP_PORT', 587);
+  const emailFrom = env('EMAIL_FROM', 'BogDev <no-reply@bogdev.com.co>');
+  const emailConfig = smtpHost
+    ? {
+        provider: 'nodemailer',
+        providerOptions: {
+          host: smtpHost,
+          port: smtpPort,
+          // 465 is implicit TLS; other ports upgrade with STARTTLS.
+          secure: smtpPort === 465,
+          auth: { user: env('SMTP_USER'), pass: env('SMTP_PASS') },
+        },
+        settings: { defaultFrom: emailFrom, defaultReplyTo: emailFrom },
+      }
+    : { settings: { defaultFrom: emailFrom, defaultReplyTo: emailFrom } };
+
   return {
     fediverse: {
       enabled: env.bool('FEDIVERSE_ENABLED', false),
@@ -41,6 +60,18 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
     },
     upload: {
       config: uploadConfig,
+    },
+    email: {
+      config: emailConfig,
+    },
+    // Accounts (issue #52): sessions last 7 days. Registration accepts only
+    // username, email and password (no `register.allowedFields`), so a `role`
+    // in the body is rejected. Sign-up, confirmation and reset URLs live in the
+    // plugin store (src/migrations/account-settings.ts).
+    'users-permissions': {
+      config: {
+        jwt: { expiresIn: '7d' },
+      },
     },
     seo: {
       enabled: true,

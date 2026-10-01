@@ -6,6 +6,7 @@ import { backfillCommentLocale } from './migrations/comment-locale';
 import { consolidateCategories, hasChanges } from './migrations/consolidate-categories';
 import { grantPublicTagPermissions } from './migrations/public-tag-permissions';
 import { ensureEditorRole } from './migrations/editor-role';
+import { applyAccountSettings } from './migrations/account-settings';
 import { migrateSliderItems } from './migrations/slider-items';
 import { ABOUT_UID, ARTICLE_STAT_UID, ARTICLE_UID } from './constants/uids';
 import { isUmamiConfigured } from './api/article-stat/utils/umami-client';
@@ -106,6 +107,12 @@ export default {
     const editor = await ensureEditorRole(strapi);
     if (editor.roleCreated || editor.permissionsGranted > 0) {
       strapi.log.info(`[roles] editor: ${JSON.stringify(editor)}`);
+    }
+
+    // After the Editor role exists: it also gets DELETE /api/users/me.
+    const accounts = await applyAccountSettings(strapi);
+    if (accounts.settingsApplied || accounts.permissionsGranted > 0) {
+      strapi.log.info(`[accounts] ${JSON.stringify(accounts)}`);
     }
 
     scheduleUmamiSync(strapi);
