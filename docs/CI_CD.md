@@ -93,15 +93,20 @@ When you push code to the `main` branch, an automated pipeline builds a Docker i
 
 ### 1. Trigger
 
-The workflow triggers automatically on every push to the `main` branch.
+The workflow triggers on every push to `main` (production) and `develop` (staging). Its first job calls `ci.yml` (typecheck, lint, format, tests, build) as a reusable workflow; nothing is built or deployed unless it passes. Pull requests to `main` or `develop` run `ci.yml` on their own.
 
 **File:** `.github/workflows/deploy.yml`
 
 ```yaml
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'develop']
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false # a newer push waits, a running deploy is never cut short
 ```
+
+Third-party actions are pinned to a commit SHA (with the tag in a comment); update both together.
 
 ### 2. Build Job
 
@@ -188,10 +193,11 @@ Excludes unnecessary files from the Docker image:
 
 **Location:** `.github/workflows/deploy.yml`
 
-Two jobs:
+Three jobs:
 
-1. `build-and-push`: Builds and pushes Docker image
-2. `deploy`: Triggers Dokploy deployment (depends on build success)
+1. `ci`: Runs `.github/workflows/ci.yml` (typecheck, lint, format, tests, build)
+2. `build-and-push`: Builds and pushes Docker image (depends on `ci`)
+3. `deploy`: Triggers Dokploy deployment (depends on build success)
 
 ### Health Check Endpoint
 

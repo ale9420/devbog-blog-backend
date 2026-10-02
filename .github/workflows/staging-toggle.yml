@@ -11,13 +11,22 @@ on:
           - start
           - stop
 
+permissions: {}
+
 jobs:
   toggle:
     runs-on: ubuntu-latest
     steps:
-      - name: Call Dokploy application.${{ github.event.inputs.action }}
+      # Values go through env, not inline `${{ }}` in the script, so nothing is
+      # interpolated into the shell.
+      - name: Call Dokploy application.${{ inputs.action }}
+        env:
+          ACTION: ${{ inputs.action }}
+          DOKPLOY_SERVER_URL: ${{ secrets.DOKPLOY_SERVER_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_STAGING_APPLICATION_ID }}
         run: |
-          curl -sf -X POST "${{ secrets.DOKPLOY_SERVER_URL }}/api/application.${{ github.event.inputs.action }}" \
-            -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}" \
+          curl -fsS -X POST "${DOKPLOY_SERVER_URL%/}/api/application.${ACTION}" \
+            -H "x-api-key: ${DOKPLOY_API_KEY}" \
             -H "Content-Type: application/json" \
-            -d '{"applicationId": "${{ secrets.DOKPLOY_STAGING_APPLICATION_ID }}"}'
+            -d "{\"applicationId\": \"${DOKPLOY_APPLICATION_ID}\"}"

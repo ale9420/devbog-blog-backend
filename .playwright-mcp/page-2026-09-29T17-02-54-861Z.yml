@@ -1,0 +1,268 @@
+- generic [ref=e3]:
+  - status [ref=e318]: Blog - BogDev
+  - generic [ref=e4]:
+    - navigation "Saltar enlaces":
+      - generic [ref=e5]:
+        - link "Saltar al contenido principal" [ref=e6] [cursor=pointer]:
+          - /url: "#main-content"
+        - link "Saltar a búsqueda" [ref=e7] [cursor=pointer]:
+          - /url: "#search"
+    - banner [ref=e8]:
+      - generic [ref=e10]:
+        - link "BogDev, inicio" [ref=e11] [cursor=pointer]:
+          - /url: /es
+          - img "BogDev" [ref=e13]
+          - generic [aria-hidden] [ref=e19]: BogDev
+        - navigation "Principal" [ref=e20]:
+          - list [ref=e21]:
+            - listitem [ref=e22]:
+              - link "Inicio" [ref=e23] [cursor=pointer]:
+                - /url: /es
+            - listitem [ref=e24]:
+              - link "Blog" [ref=e25] [cursor=pointer]:
+                - /url: /es/blog
+            - listitem [ref=e26]:
+              - link "Acerca de" [ref=e27] [cursor=pointer]:
+                - /url: /es/about
+        - group "Idioma" [ref=e28]:
+          - button "Español" [pressed] [ref=e29] [cursor=pointer]: ES
+          - button "English" [ref=e30] [cursor=pointer]: EN
+      - generic [ref=e32]:
+        - paragraph [ref=e33]:
+          - generic [aria-hidden] [ref=e34]: ◆
+          - generic [ref=e35]: Bogotá
+        - generic [ref=e36]:
+          - link "@bogdev en el fediverso" [ref=e37] [cursor=pointer]:
+            - /url: /es#fediverso
+            - generic [aria-hidden] [ref=e38]: ◆
+            - text: "@bogdev"
+          - button "Buscar" [ref=e39] [cursor=pointer]:
+            - text: Buscar
+            - generic [aria-hidden] [ref=e40]: Ctrl K
+          - group "Tema de color" [ref=e41]:
+            - button "Noche" [ref=e42] [cursor=pointer]
+            - button "Día" [pressed] [ref=e43] [cursor=pointer]
+    - main [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - paragraph [ref=e47]: Archivo · 03 artículos
+          - heading "Blog" [level=1] [ref=e48]
+          - paragraph [ref=e49]: Explora todos los artículos sobre privacidad, DIY, IA, software y Linux.
+          - generic [ref=e50]:
+            - group "Vista" [ref=e51]:
+              - button "Cuadrícula" [pressed] [ref=e52] [cursor=pointer]
+              - button "Bitácora" [ref=e53] [cursor=pointer]
+            - generic [ref=e54]:
+              - generic [ref=e55]: Ordenar
+              - combobox "Ordenar" [ref=e56] [cursor=pointer]:
+                - option "Más recientes" [selected]
+                - option "Más antiguos"
+                - option "Más comentados en el fediverso"
+        - region "Filtros" [ref=e57]:
+          - generic [ref=e58]:
+            - generic [ref=e59]: Buscar artículos
+            - generic [aria-hidden] [ref=e60]: →
+            - searchbox "Buscar artículos" [ref=e61]
+            - status
+            - paragraph [ref=e62]: Mínimo 3 letras · busca en los títulos
+            - generic [ref=e63] [cursor=pointer]:
+              - checkbox "Buscar también en el contenido" [ref=e64]
+              - text: Buscar también en el contenido
+          - generic [ref=e65]:
+            - generic [ref=e66]: Categorías
+            - group "Filtrar por categoría" [ref=e67]:
+              - button "Todos 03" [pressed] [ref=e68] [cursor=pointer]:
+                - text: Todos
+                - generic [ref=e70]: "03"
+              - button "Privacidad 00" [ref=e71] [cursor=pointer]:
+                - text: Privacidad
+                - generic [ref=e73]: "00"
+              - button "DIY 02" [ref=e74] [cursor=pointer]:
+                - text: DIY
+                - generic [ref=e76]: "02"
+              - button "IA 01" [ref=e77] [cursor=pointer]:
+                - text: IA
+                - generic [ref=e79]: "01"
+              - button "Software 00" [ref=e80] [cursor=pointer]:
+                - text: Software
+                - generic [ref=e82]: "00"
+              - button "Linux 00" [ref=e83] [cursor=pointer]:
+                - text: Linux
+                - generic [ref=e85]: "00"
+          - generic [ref=e86]:
+            - generic [ref=e87]: Etiquetas
+            - group "Filtrar por etiqueta" [ref=e88]:
+              - button "#Autoalojamiento" [ref=e89] [cursor=pointer]
+              - button "#Inteligencia artificial" [ref=e90] [cursor=pointer]
+              - button "#LLM" [active] [pressed] [ref=e91] [cursor=pointer]
+              - button "#Software libre" [ref=e92] [cursor=pointer]
+              - button "#Solarpunk" [ref=e93] [cursor=pointer]
+              - button "#Sostenibilidad" [ref=e94] [cursor=pointer]
+          - generic [ref=e319]:
+            - generic [ref=e320]: Filtrando por
+            - 'button "Quitar filtro #LLM" [ref=e321] [cursor=pointer]':
+              - text: "#LLM"
+              - generic [aria-hidden] [ref=e322]: ✕
+            - button "Limpiar filtros" [ref=e323] [cursor=pointer]
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - generic [ref=e97]:
+              - article [ref=e114]:
+                - generic [ref=e116]:
+                  - generic [ref=e117]:
+                    - generic [ref=e118]: DIY · Hazlo tú mismo
+                    - time [ref=e122]: 26.09.2026
+                  - heading [level=3] [ref=e123]:
+                    - 'link "Soberanía digital y laboratorios locales: El inicio de este espacio" [ref=e124] [cursor=pointer]':
+                      - /url: /es/blog/inicio-del-blog
+                  - paragraph [ref=e125]: Primer artículo de este blog.
+                  - generic [ref=e126]:
+                    - generic [ref=e127]: Alejandro Ramirez
+                    - generic [aria-hidden] [ref=e128]:
+                      - text: Leer más
+                      - generic [ref=e129]: →
+              - article [ref=e130]:
+                - generic [ref=e132]:
+                  - generic [ref=e133]:
+                    - generic [ref=e134]: Inteligencia artificial
+                    - time [ref=e138]: 25.09.2026
+                  - heading [level=3] [ref=e139]:
+                    - 'link "RAG: qué es y cómo funciona la generación aumentada por recuperación" [ref=e140] [cursor=pointer]':
+                      - /url: /es/blog/rag-fundamentos-que-es-y-como-funciona
+                  - paragraph [ref=e141]: Por qué los LLM alucinan, y cómo la arquitectura los conecta con tus datos.
+                  - generic [ref=e142]:
+                    - generic [ref=e143]: Alejandro Ramirez
+                    - generic [aria-hidden] [ref=e144]:
+                      - text: Leer más
+                      - generic [ref=e145]: →
+            - navigation "Paginación" [ref=e146]:
+              - generic [ref=e147]:
+                - text: ←
+                - generic [ref=e148]: Anterior
+              - generic [ref=e149]:
+                - list [ref=e150]:
+                  - listitem [ref=e151]:
+                    - link "Página 1" [ref=e152] [cursor=pointer]:
+                      - /url: /es/blog?tag=llm
+                      - text: "01"
+                - generic [ref=e153]: Página 01 de 01 · 6 por página
+              - generic [ref=e154]:
+                - generic [ref=e155]: Siguiente
+                - text: →
+          - complementary "Más del blog" [ref=e156]:
+            - region [ref=e157]:
+              - heading "Artículos recientes" [level=2] [ref=e158]
+              - 'link "26.09.2026 Solarpunk: imaginar un futuro que valga la pena" [ref=e159] [cursor=pointer]':
+                - /url: /es/blog/que-es-solarpunk
+                - time [ref=e160]: 26.09.2026
+                - generic [ref=e161]: "Solarpunk: imaginar un futuro que valga la pena"
+              - 'link "26.09.2026 Soberanía digital y laboratorios locales: El inicio de este espacio" [ref=e162] [cursor=pointer]':
+                - /url: /es/blog/inicio-del-blog
+                - time [ref=e163]: 26.09.2026
+                - generic [ref=e164]: "Soberanía digital y laboratorios locales: El inicio de este espacio"
+              - 'link "25.09.2026 RAG: qué es y cómo funciona la generación aumentada por recuperación" [ref=e165] [cursor=pointer]':
+                - /url: /es/blog/rag-fundamentos-que-es-y-como-funciona
+                - time [ref=e166]: 25.09.2026
+                - generic [ref=e167]: "RAG: qué es y cómo funciona la generación aumentada por recuperación"
+            - region [ref=e168]:
+              - heading "Suscribirse" [level=2] [ref=e169]
+              - link "RSS · feed completo" [ref=e170] [cursor=pointer]:
+                - /url: /es/feed.xml
+                - text: RSS · feed completo
+                - generic [aria-hidden] [ref=e171]: ↗
+              - generic [ref=e172]:
+                - paragraph [ref=e173]: "Un feed por categoría:"
+                - list "Un feed por categoría:" [ref=e174]:
+                  - listitem [ref=e175]:
+                    - link "Feed RSS de Privacidad" [ref=e176] [cursor=pointer]:
+                      - /url: /es/feed/privacidad.xml
+                      - text: Privacidad
+                      - generic [aria-hidden] [ref=e177]: ↗
+                  - listitem [ref=e178]:
+                    - link "Feed RSS de DIY" [ref=e179] [cursor=pointer]:
+                      - /url: /es/feed/diy.xml
+                      - text: DIY
+                      - generic [aria-hidden] [ref=e180]: ↗
+                  - listitem [ref=e181]:
+                    - link "Feed RSS de IA" [ref=e182] [cursor=pointer]:
+                      - /url: /es/feed/ia.xml
+                      - text: IA
+                      - generic [aria-hidden] [ref=e183]: ↗
+                  - listitem [ref=e184]:
+                    - link "Feed RSS de Software" [ref=e185] [cursor=pointer]:
+                      - /url: /es/feed/software.xml
+                      - text: Software
+                      - generic [aria-hidden] [ref=e186]: ↗
+                  - listitem [ref=e187]:
+                    - link "Feed RSS de Linux" [ref=e188] [cursor=pointer]:
+                      - /url: /es/feed/linux.xml
+                      - text: Linux
+                      - generic [aria-hidden] [ref=e189]: ↗
+              - link "Seguir @bogdev en el fediverso" [ref=e190] [cursor=pointer]:
+                - /url: /es#fediverso
+                - generic [aria-hidden] [ref=e191]: ◆
+                - text: Seguir @bogdev en el fediverso
+    - contentinfo [ref=e192]:
+      - generic [ref=e193]:
+        - generic [ref=e194]:
+          - link "BogDev, inicio" [ref=e195] [cursor=pointer]:
+            - /url: /es
+            - img "BogDev" [ref=e197]
+            - generic [aria-hidden] [ref=e203]: BogDev
+          - paragraph [ref=e204]: Explorando privacidad, DIY, IA, software y Linux.
+          - list "Redes" [ref=e205]:
+            - listitem [ref=e206]:
+              - link "LinkedIn" [ref=e207] [cursor=pointer]:
+                - /url: https://www.linkedin.com/in/alejandro-ramirez-garcia-046713139
+                - generic [aria-hidden] [ref=e209]: ↗
+            - listitem [ref=e210]:
+              - link "GitHub" [ref=e211] [cursor=pointer]:
+                - /url: https://github.com/ale9420
+                - generic [aria-hidden] [ref=e213]: ↗
+            - listitem [ref=e214]:
+              - link "Codeberg" [ref=e215] [cursor=pointer]:
+                - /url: https://codeberg.org/alejo9420
+                - generic [aria-hidden] [ref=e217]: ↗
+            - listitem [ref=e218]:
+              - link "Mastodon" [ref=e219] [cursor=pointer]:
+                - /url: https://mastodon.social/@bogdev
+                - generic [aria-hidden] [ref=e221]: ↗
+        - navigation [ref=e222]:
+          - heading "Navegar" [level=2] [ref=e223]
+          - link "Inicio" [ref=e224] [cursor=pointer]:
+            - /url: /es
+          - link "Blog" [ref=e225] [cursor=pointer]:
+            - /url: /es/blog
+          - link "Acerca de" [ref=e226] [cursor=pointer]:
+            - /url: /es/about
+        - navigation [ref=e227]:
+          - heading "Temas" [level=2] [ref=e228]
+          - link "Privacidad" [ref=e229] [cursor=pointer]:
+            - /url: /es/blog?category=privacidad
+          - link "DIY · Hazlo tú mismo" [ref=e231] [cursor=pointer]:
+            - /url: /es/blog?category=diy
+          - link "Inteligencia artificial" [ref=e233] [cursor=pointer]:
+            - /url: /es/blog?category=ia
+          - link "Desarrollo de software" [ref=e235] [cursor=pointer]:
+            - /url: /es/blog?category=software
+          - link "Linux y código abierto" [ref=e237] [cursor=pointer]:
+            - /url: /es/blog?category=linux
+        - navigation [ref=e239]:
+          - heading "Suscribirse" [level=2] [ref=e240]
+          - link "RSS feed" [ref=e241] [cursor=pointer]:
+            - /url: /feed.xml
+            - text: RSS feed
+            - generic [aria-hidden] [ref=e242]: ↗
+          - link "Fediverso · @bogdev" [ref=e243] [cursor=pointer]:
+            - /url: /es#fediverso
+          - link "Newsletter" [ref=e244] [cursor=pointer]:
+            - /url: /es#newsletter
+      - img [aria-hidden] [ref=e250]:
+        - generic [ref=e281]:
+          - generic [ref=e282]: Monserrate · 3.152 m
+          - generic [ref=e283]: Guadalupe · 3.317 m
+          - generic [ref=e284]: Cerros orientales · vista desde el occidente
+      - generic [ref=e314]:
+        - generic [ref=e315]: © 2026 BogDev · Alejandro Ramírez
+        - generic [ref=e316]: Hecho en Bogotá, Colombia ◆ 4.61°N 74.08°W
+        - generic [ref=e317]: Ilustración · copetón, Zonotrichia capensis
