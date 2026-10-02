@@ -132,3 +132,6 @@ build
 
 # Claude Code (per-machine settings)
 .claude/settings.local.json
+
+# Playwright MCP snapshots (local browser sessions)
+.playwright-mcp/

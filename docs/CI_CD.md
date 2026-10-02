@@ -121,9 +121,9 @@ The `build-and-push` job runs on GitHub's Ubuntu runners:
 
 After the image is pushed, the `deploy` job triggers Dokploy:
 
-1. **Call Dokploy API**: Uses `benbristow/dokploy-deploy-action@0.2.2`
+1. **Call Dokploy API**: `curl -f` to `application.deploy` with `DOKPLOY_API_KEY` (fails the job on a non-2xx answer)
 2. **Dokploy pulls image**: Fetches the new image from GHCR
-3. **Health check**: Dokploy waits for `/_health` endpoint to return 200
+3. **Health check**: Dokploy waits for `/_health` endpoint to return 204
 4. **Switch traffic**: If healthy, routes traffic to new container
 5. **Rollback on failure**: If health check fails, automatically reverts to previous version
 
@@ -195,13 +195,9 @@ Two jobs:
 
 ### Health Check Endpoint
 
-**Location:** `src/api/health/`
-
-- **Route**: `GET /_health`
-- **Response**: `{ "status": "ok", "timestamp": "..." }`
-- **Purpose**: Allows Dokploy to verify the app is running and ready
-
-This is a custom Strapi API endpoint (not a content type).
+- **Route**: `GET /_health`, built into Strapi (`@strapi/core`), outside the `/api` prefix and with no permissions
+- **Response**: `204 No Content` once the server is listening
+- **Purpose**: Allows Dokploy and the image's `HEALTHCHECK` to verify the app is running and ready
 
 ---
 
@@ -440,7 +436,7 @@ docker build -t test-build .
 **Common causes:**
 
 1. **GHCR authentication**: Verify Dokploy has GHCR credentials
-2. **Health check fails**: App crashes on startup or `/_health` returns non-200
+2. **Health check fails**: App crashes on startup or `/_health` doesn't return 204
 3. **Environment variables missing**: Check Dokploy app env vars
 4. **Database connection**: Verify DB credentials and internal hostname
 

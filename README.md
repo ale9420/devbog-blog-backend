@@ -1,71 +1,40 @@
-# 🚀 Getting started with Strapi
+# devbog-blog-backend
 
-Strapi comes with a full featured [Command Line Interface](https://docs.strapi.io/dev-docs/cli) (CLI) which lets you scaffold and manage your project in seconds.
+Strapi 5 (TypeScript) headless CMS for the [BogDev](https://bogdev.com.co) blog: articles, categories, tags, comments, reader accounts, newsletter subscribers, visitor stats from Umami and optional ActivityPub federation. Production runs at `api.bogdev.com.co` (PostgreSQL), staging at `staging-api.bogdev.com.co` (SQLite).
 
-### `develop`
+## Getting started
 
-Start your Strapi application with autoReload enabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-develop)
+Requires Node 22 (`.nvmrc`).
 
-```
-npm run develop
-# or
-yarn develop
-```
-
-### `start`
-
-Start your Strapi application with autoReload disabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-start)
-
-```
-npm run start
-# or
-yarn start
+```bash
+npm ci
+cp .env.example .env
+npm run generate:keys     # fills the Strapi secrets in .env
+npm run develop           # http://localhost:1337/admin, SQLite in .tmp/data.db
+npm run seed:example      # optional sample content
 ```
 
-### `build`
+## Checks
 
-Build your admin panel. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-build)
-
-```
-npm run build
-# or
-yarn build
+```bash
+npm run typecheck && npm run lint && npm run format:check
+npm test                  # boots a real Strapi per suite on an isolated SQLite file
 ```
 
-### `generate:keys`
+CI runs the same checks plus `npm run build` on every pull request to `main`.
 
-Generate secure random values for required Strapi environment variables (APP_KEYS, API_TOKEN_SALT, ADMIN_JWT_SECRET, TRANSFER_TOKEN_SALT, JWT_SECRET, ENCRYPTION_KEY).
+## Documentation
 
-```
-npm run generate:keys
-```
+| Topic                                         | Where                       |
+| --------------------------------------------- | --------------------------- |
+| Architecture, commands, non-obvious behaviour | `CLAUDE.md`                 |
+| Conventions, project layout, Strapi patterns  | `AGENTS.md`                 |
+| CI/CD, Docker, Dokploy, environment variables | `docs/CI_CD.md`             |
+| Reader accounts, editors, account deletion    | `docs/ACCOUNTS.md`          |
+| Umami visitors and most read articles         | `docs/ANALYTICS.md`         |
+| ActivityPub federation (`fediverse` plugin)   | `docs/FEDIVERSE.md`         |
+| Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md` |
 
-Update your `.env` file with the generated values.
+## Deployment
 
-## ⚙️ Deployment
-
-Strapi gives you many possible deployment options for your project including [Strapi Cloud](https://cloud.strapi.io). Browse the [deployment section of the documentation](https://docs.strapi.io/dev-docs/deployment) to find the best solution for your use case.
-
-```
-yarn strapi deploy
-```
-
-## 📚 Learn more
-
-- [Resource center](https://strapi.io/resource-center) - Strapi resource center.
-- [Strapi documentation](https://docs.strapi.io) - Official Strapi documentation.
-- [Strapi tutorials](https://strapi.io/tutorials) - List of tutorials made by the core team and the community.
-- [Strapi blog](https://strapi.io/blog) - Official Strapi blog containing articles made by the Strapi team and the community.
-- [Changelog](https://strapi.io/changelog) - Find out about the Strapi product updates, new features and general improvements.
-
-Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/strapi). Your feedback and contributions are welcome!
-
-## ✨ Community
-
-- [Discord](https://discord.strapi.io) - Come chat with the Strapi community including the core team.
-- [Forum](https://forum.strapi.io/) - Place to discuss, ask questions and find answers, show your Strapi project and get feedback or just talk with other Community members.
-- [Awesome Strapi](https://github.com/strapi/awesome-strapi) - A curated list of awesome things related to Strapi.
-
----
-
-<sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+Pushing to `main` builds a Docker image, pushes it to GHCR and deploys it to production through Dokploy; `develop` deploys staging. See `docs/CI_CD.md`.
