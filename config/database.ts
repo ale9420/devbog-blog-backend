@@ -52,11 +52,12 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database 
   };
 
   return {
+    // Strapi validates the client; the cast only narrows env's plain string.
     connection: {
       client,
-      ...connections[client],
+      ...connections[client as keyof typeof connections],
       acquireConnectionTimeout: env.int('DATABASE_CONNECTION_TIMEOUT', 60000),
-    },
+    } as Core.Config.Database['connection'],
   };
 };
 

@@ -207,7 +207,7 @@ export async function rankArticles(
   const boosts = 'COALESCE(interactions.boosts, 0)';
   const replies = 'COALESCE(replies.replies, 0)';
 
-  const [rows, [{ total }]] = await Promise.all([
+  const [rows, totals] = await Promise.all([
     articles()
       .leftJoin(
         interactionCounts(strapi, blocked).as('interactions'),
@@ -227,7 +227,8 @@ export async function rankArticles(
     articles().count({ total: '*' }),
   ]);
 
-  const count = toNumber(total);
+  // Knex types count() rows loosely; it is one row with `total`.
+  const count = toNumber((totals as { total?: string | number }[])[0]?.total);
   return {
     data: (
       rows as { document_id: string; likes: unknown; boosts: unknown; replies: unknown }[]

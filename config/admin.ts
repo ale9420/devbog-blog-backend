@@ -1,11 +1,12 @@
 import type { Core } from '@strapi/strapi';
 
+// Secrets are required: Strapi refuses to start without them (npm run generate:keys).
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Admin => ({
   auth: {
-    secret: env('ADMIN_JWT_SECRET'),
+    secret: env('ADMIN_JWT_SECRET') as string,
   },
   apiToken: {
-    salt: env('API_TOKEN_SALT'),
+    salt: env('API_TOKEN_SALT') as string,
   },
   transfer: {
     token: {
