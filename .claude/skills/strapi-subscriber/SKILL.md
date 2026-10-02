@@ -16,13 +16,13 @@ The `subscriber` content type stores newsletter subscriptions. The whole flow (s
 
 `src/api/subscriber/content-types/subscriber/schema.json`, without draft and publish (every entry is published, so `GET /api/subscribers` finds it):
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| `email` | email, required, unique | Stored lowercase by the frontend |
-| `confirmationToken` | string | UUID sent in the confirmation email; `null` once confirmed |
-| `unsubscribeToken` | string, unique | Random 32-byte base64url token for the unsubscribe link and `List-Unsubscribe` header of every email. Stored as is so each send can include it |
-| `confirmed` | boolean, default `false` | |
-| `language` | enumeration `en`/`es`, default `en` | Email language. `locale` is reserved by Strapi i18n |
+| Field               | Type                                | Notes                                                                                                                                          |
+| ------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `email`             | email, required, unique             | Stored lowercase by the frontend                                                                                                               |
+| `confirmationToken` | string                              | UUID sent in the confirmation email; `null` once confirmed                                                                                     |
+| `unsubscribeToken`  | string, unique                      | Random 32-byte base64url token for the unsubscribe link and `List-Unsubscribe` header of every email. Stored as is so each send can include it |
+| `confirmed`         | boolean, default `false`            |                                                                                                                                                |
+| `language`          | enumeration `en`/`es`, default `en` | Email language. `locale` is reserved by Strapi i18n                                                                                            |
 
 Controller, service and router are the core factories: no custom logic.
 

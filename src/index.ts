@@ -16,12 +16,7 @@ import { assertImageCreditsValid } from './utils/image-credit';
 import { restrictDraftsToEditors } from './utils/drafts-access';
 
 export default {
-  /**
-   * An asynchronous register function that runs before
-   * your application is initialized.
-   *
-   * This gives you an opportunity to extend code.
-   */
+  /** Before init: Document Service middlewares and extra admin routes. */
   register({ strapi }: { strapi: Core.Strapi }) {
     // Rejects citations without a reference, and keeps the article's
     // searchable plain text in step with its body.
@@ -76,11 +71,8 @@ export default {
   },
 
   /**
-   * An asynchronous bootstrap function that runs before
-   * your application gets started.
-   *
-   * This gives you an opportunity to set up your data model,
-   * run jobs, or perform some special logic.
+   * On every boot, before listening: idempotent data migrations
+   * (src/migrations), then the Umami cron. Order matters where noted.
    */
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     const report = await consolidateCategories(strapi);

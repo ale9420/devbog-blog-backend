@@ -19,7 +19,7 @@ This project is deployed as a Docker container managed by **Dokploy** on a Hetzn
 1. A push to `main` (production) or `develop` (staging) triggers `.github/workflows/deploy.yml`.
 2. GitHub Actions builds a Docker image and pushes it to GHCR, tagged with the commit SHA plus `latest` (`main`) or `staging` (`develop`).
 3. The deploy job picks the Dokploy application from the branch (`DOKPLOY_APPLICATION_ID` for `main`, `DOKPLOY_STAGING_APPLICATION_ID` otherwise) and calls Dokploy's API.
-4. Dokploy waits for `GET /_health` to return 200 before switching traffic, and rolls back if it fails.
+4. Dokploy waits for `GET /_health` to return 204 before switching traffic, and rolls back if it fails.
 
 The `curl` in the deploy job has no `-f`, so a green run does not prove Dokploy accepted the deploy — check the Deployments tab.
 
@@ -73,14 +73,7 @@ node scripts/generate-keys.js
 
 ## Health check
 
-The custom endpoint `GET /_health` is used by Dokploy:
-
-```javascript
-// src/api/health/controllers/health.ts
-index(ctx) {
-  ctx.body = { status: 'ok', timestamp: new Date().toISOString() };
-}
-```
+Dokploy and the image's `HEALTHCHECK` probe `GET /_health`, which is built into Strapi: it answers `204 No Content` (no body) once the server listens, outside `/api` and without permissions. There is no custom health endpoint.
 
 Dokploy config:
 
