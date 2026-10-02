@@ -35,16 +35,16 @@
     "@fedify/koa": "2.3.6",
     "@js-temporal/polyfill": "^0.5.1",
     "@notum-cz/strapi-plugin-seo": "^2.0.12",
-    "@strapi/i18n": "^5.50.1",
-    "@strapi/plugin-users-permissions": "^5.50.1",
-    "@strapi/provider-email-nodemailer": "^5.50.1",
-    "@strapi/provider-upload-aws-s3": "^5.50.1",
-    "@strapi/strapi": "^5.50.1",
+    "@strapi/i18n": "^5.56.0",
+    "@strapi/plugin-users-permissions": "^5.56.0",
+    "@strapi/provider-email-nodemailer": "^5.56.0",
+    "@strapi/provider-upload-aws-s3": "^5.56.0",
+    "@strapi/strapi": "^5.56.0",
     "pg": "^8.20.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.3",
-    "strapi-plugin-comments": "^3.2.3",
+    "strapi-plugin-comments": "^3.2.4",
     "styled-components": "^6.3.12"
   },
   "devDependencies": {
@@ -68,5 +68,8 @@
   "strapi": {
     "uuid": "c8f9eb3b-3208-4a3d-b35a-944b4dde5743",
     "installId": "964b072232ae06acbf76e84e14c792edb72cb22d44ea04c713df924ad2c47907"
+  },
+  "overrides": {
+    "axios": "^1.20.0"
   }
 }
