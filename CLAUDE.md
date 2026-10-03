@@ -14,7 +14,7 @@ Strapi 5 (TypeScript) headless CMS backend for the BogDev blog, deployed as a Do
 npm run develop         # dev server with hot reload (alias: dev)
 npm run start           # production server, no reload
 npm run build           # build the admin panel
-npm run typecheck       # tsc --noEmit for root, then again for the fediverse plugin (two separate projects)
+npm run typecheck       # tsc --noEmit for root, the fediverse plugin and tests/ (three separate projects)
 npm run lint / lint:fix
 npm run format / format:check
 npm run test             # jest --forceExit --detectOpenHandles
@@ -23,7 +23,7 @@ npm run generate:keys    # generate Strapi secrets into .env
 npm run seed:example     # run scripts/seed.js
 ```
 
-Run a single test file: `npx jest tests/fediverse.test.js` (matches `**/tests/**/*.test.js`).
+Run a single test file: `npx jest tests/fediverse.test.ts` (matches `**/tests/**/*.test.[jt]s`).
 
 **`build:fediverse` runs automatically** as a `pre*` hook (`predev`, `predevelop`, `prebuild`, `pretest`) — it esbuild-bundles `src/plugins/fediverse/server/src/index.ts` into `src/plugins/fediverse/dist/strapi-server.js`. This is necessary because the fediverse plugin is its own TypeScript project (`src/plugins/fediverse/tsconfig.json`), excluded from the root `tsconfig.json` compilation, and depends on ESM-only packages (`@fedify/*`) that Strapi's own CJS build pipeline can't handle directly. If you edit plugin source and don't see changes, check that this bundle step ran.
 
@@ -50,7 +50,7 @@ Run a single test file: `npx jest tests/fediverse.test.js` (matches `**/tests/**
 
 **Analytics**: `api::article-stat` holds the visitors of each published article translation, synced hourly from a self-hosted Umami (cron added in `bootstrap()`, gated by `UMAMI_URL`/`UMAMI_WEBSITE_ID`/`UMAMI_API_KEY` in `config/umami.ts`), and serves `GET /api/articles/popular` plus a Visitors widget on the admin homepage (`src/admin/app.tsx`, backed by the admin-API route `/article-stats/summary` registered in `register()`). Details in `docs/ANALYTICS.md`.
 
-**Testing** (`tests/`) boots a real Strapi instance per suite (`tests/strapi.js`) against an isolated SQLite file per Jest worker (`.tmp/test-<worker>.db`; `DATABASE_FILENAME` must stay relative to the project root), not mocks — `setupStrapi()`/`cleanupStrapi()` in `beforeAll`/`afterAll`. Jest transforms TS/JS via `tests/helpers/esbuild-transformer.js` and selectively transforms the `structured-field-values` package inside `node_modules` (an ESM-only transitive dependency of Fedify that Jest can't `require()` natively). Fediverse tests force `FEDIVERSE_ENABLED=true` before Strapi boots since env vars are read at plugin-registration time, and run against `tests/helpers/remote-actor.js`, a fake remote server that serves a signed actor and records what the plugin delivers to its inbox (`allowPrivateAddress` is enabled only when `NODE_ENV=test`). Run `npm run build:fediverse` first when using `npx jest` directly — the `pretest` hook only runs with `npm test`.
+**Testing** (`tests/`) boots a real Strapi instance per suite (`tests/strapi.ts`) against an isolated SQLite file per Jest worker (`.tmp/test-<worker>.db`; `DATABASE_FILENAME` must stay relative to the project root), not mocks — `setupStrapi()`/`cleanupStrapi()` in `beforeAll`/`afterAll`. Suites are TypeScript under `strict`: Jest only transpiles them (`tests/helpers/esbuild-transformer.js`, which also converts the ESM-only packages listed in `jest.config.js`, such as Fedify's `structured-field-values`), and `npm run typecheck` checks them through `tests/tsconfig.json`. Jest globals are imported from `@jest/globals`; response shapes live in `tests/helpers/api-types.ts`; inputs that are invalid on purpose carry `// @ts-expect-error` with the reason. Set env vars a suite needs in `beforeAll`, before `setupStrapi()`: imports are hoisted above top-level statements. Fediverse tests force `FEDIVERSE_ENABLED=true` before Strapi boots since env vars are read at plugin-registration time, and run against `tests/helpers/remote-actor.ts`, a fake remote server that serves a signed actor and records what the plugin delivers to its inbox (`allowPrivateAddress` is enabled only when `NODE_ENV=test`). Run `npm run build:fediverse` first when using `npx jest` directly — the `pretest` hook only runs with `npm test`.
 
 ## Deployment
 

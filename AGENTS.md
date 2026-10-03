@@ -19,7 +19,7 @@ npm run strapi <cmd>   # Run Strapi CLI commands
 ## Quality & Test Commands
 
 ```bash
-npm run typecheck      # Run TypeScript checks without emitting files
+npm run typecheck      # Type-check the server, the fediverse plugin and the tests
 npm run lint           # Run ESLint
 npm run lint:fix       # Run ESLint and auto-fix issues
 npm run format         # Format files with Prettier
