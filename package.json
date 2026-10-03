@@ -70,6 +70,11 @@
     "installId": "964b072232ae06acbf76e84e14c792edb72cb22d44ea04c713df924ad2c47907"
   },
   "overrides": {
-    "axios": "^1.20.0"
+    "axios": "^1.20.0",
+    "nodemailer": "^9.1.1",
+    "postcss": "^8.5.28",
+    "markdown-it": "^14.3.2",
+    "dompurify": "^3.4.16",
+    "@opentelemetry/core": "^2.8.0"
   }
 }

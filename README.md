@@ -34,6 +34,8 @@ CI runs the same checks plus `npm run build` on every pull request to `main`.
 | Umami visitors and most read articles         | `docs/ANALYTICS.md`         |
 | ActivityPub federation (`fediverse` plugin)   | `docs/FEDIVERSE.md`         |
 | Content types, media, comments, seeding, etc. | `.claude/skills/*/SKILL.md` |
+| Reporting vulnerabilities, dependency policy  | `SECURITY.md`               |
+| Accepted dependency vulnerabilities           | `docs/DEPENDENCY_RISKS.md`  |
 
 ## Deployment
 
