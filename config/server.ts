@@ -8,8 +8,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server =>
   app: {
     keys: env.array('APP_KEYS'),
   },
+  // Admin MCP endpoint (/mcp), authenticated with admin API tokens; anyone
+  // holding one can read and write content. Set to false where it isn't used.
   mcp: {
-    enabled: true,
+    enabled: env.bool('STRAPI_MCP_ENABLED', true),
   },
   // Tasks are added in bootstrap (src/index.ts), each gated by its own config.
   cron: {

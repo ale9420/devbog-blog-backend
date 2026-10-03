@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 
-const config: Core.Config.Middlewares = [
+const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewares => [
   'strapi::logger',
   'strapi::errors',
   {
@@ -28,7 +28,13 @@ const config: Core.Config.Middlewares = [
       },
     },
   },
-  'strapi::cors',
+  {
+    name: 'strapi::cors',
+    // Browser origins allowed to call the API with credentials. Unset keeps
+    // Strapi's default `*`, which reflects any origin; production sets it to
+    // the frontend (docs/CI_CD.md). Server-to-server calls ignore CORS.
+    config: { origin: env.array('CORS_ORIGINS', ['*']) },
+  },
   'strapi::poweredBy',
   'strapi::query',
   {

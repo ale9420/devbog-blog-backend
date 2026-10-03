@@ -326,6 +326,15 @@ DATABASE_PASSWORD=<password>
 UPLOAD_PATH=/app/public/uploads
 ```
 
+### Security Variables
+
+```env
+CORS_ORIGINS=https://bogdev.com.co   # browser origins allowed by CORS, comma separated
+STRAPI_MCP_ENABLED=true              # /mcp (admin API tokens); false where no agent needs it
+```
+
+Without `CORS_ORIGINS` Strapi reflects any `Origin` with credentials allowed. The admin panel is same-origin and fediverse servers call server to server, so neither needs to be listed; add a staging or local frontend only to the environment that serves it.
+
 ### Fediverse Variables
 
 The fediverse (ActivityPub) plugin is **off by default**. These variables control it; the full behaviour is in `docs/FEDIVERSE.md`.
