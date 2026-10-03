@@ -10,6 +10,10 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
+# Read-only by default; build-and-push adds packages: write for GHCR.
+permissions:
+  contents: read
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}

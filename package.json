@@ -51,14 +51,14 @@
     "@jest/globals": "^30.5.2",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",
-    "@types/supertest": "^7.2.0",
-    "better-sqlite3": "12.6.2",
+    "@types/supertest": "^7.2.1",
+    "better-sqlite3": "12.11.1",
     "esbuild": "^0.28.0",
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
     "jest": "^30.5.2",
     "prettier": "^3.8.4",
-    "supertest": "^7.2.2",
+    "supertest": "^7.3.0",
     "typescript": "^5",
     "typescript-eslint": "^8.61.1"
   },
@@ -71,6 +71,11 @@
     "installId": "964b072232ae06acbf76e84e14c792edb72cb22d44ea04c713df924ad2c47907"
   },
   "overrides": {
-    "axios": "^1.20.0"
+    "axios": "^1.20.0",
+    "nodemailer": "^9.1.1",
+    "postcss": "^8.5.28",
+    "markdown-it": "^14.3.2",
+    "dompurify": "^3.4.16",
+    "@opentelemetry/core": "^2.8.0"
   }
 }
