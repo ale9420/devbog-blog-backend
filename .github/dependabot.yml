@@ -1,0 +1,99 @@
+# Same schedule and layout as devbog-blog-front. Major versions are never
+# proposed (ignore "*" semver-major in every ecosystem): they are upgraded by
+# hand, e.g. Strapi with `npm run upgrade`.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Bogota
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          - version-update:semver-major
+    groups:
+      # Strapi packages must move together (same version across @strapi/*).
+      strapi:
+        patterns:
+          - '@strapi/*'
+          - 'strapi-plugin-*'
+          - '@notum-cz/strapi-plugin-seo'
+        update-types:
+          - minor
+          - patch
+      fedify:
+        patterns:
+          - '@fedify/*'
+        update-types:
+          - minor
+          - patch
+      testing:
+        patterns:
+          - jest
+          - '@types/jest'
+          - supertest
+          - '@types/supertest'
+          - better-sqlite3
+        update-types:
+          - minor
+          - patch
+      lint-and-types:
+        patterns:
+          - eslint
+          - 'eslint-*'
+          - typescript-eslint
+          - typescript
+          - prettier
+          - esbuild
+          - '@types/*'
+        update-types:
+          - minor
+          - patch
+      other:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Bogota
+    commit-message:
+      prefix: ci
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          - version-update:semver-major
+    groups:
+      actions:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Bogota
+    commit-message:
+      prefix: chore(docker)
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          - version-update:semver-major
