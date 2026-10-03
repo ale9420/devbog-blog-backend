@@ -20,5 +20,4 @@ export interface ReplyContext {
 }
 
 export type IngestResult =
-  | { status: 'applied'; documentId: string }
-  | { status: 'ignored'; reason: string };
+  { status: 'applied'; documentId: string } | { status: 'ignored'; reason: string };

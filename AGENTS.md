@@ -179,12 +179,8 @@ Supports two database clients configured via `DATABASE_CLIENT`:
 
 ```typescript
 const connections = {
-  postgres: {
-    /* ... */
-  },
-  sqlite: {
-    /* ... */
-  },
+  postgres: {/* ... */},
+  sqlite: {/* ... */},
 };
 ```
 
