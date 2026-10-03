@@ -2,8 +2,8 @@
 
 // Jest transformer that runs esbuild on sources it is applied to.
 //
-// Needed because the Fedify dependency tree contains ESM-only packages
-// (e.g. `structured-field-values`) whose `.js` files use `export` syntax.
+// Needed because some dependencies are ESM-only (`structured-field-values`
+// from Fedify, `htmlparser2` from sanitize-html) and use `export` syntax.
 // Node >=22 can `require()` them natively (the dev server does), but Jest's
 // runtime cannot. jest.config.js allowlists those packages via
 // `transformIgnorePatterns` so esbuild converts them to CJS here.
