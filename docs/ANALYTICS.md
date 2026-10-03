@@ -71,4 +71,4 @@ Without `UMAMI_URL`, `UMAMI_WEBSITE_ID` and `UMAMI_API_KEY` the sync never runs.
 
 ## Tests
 
-`tests/article-stats.test.js` runs against `tests/helpers/fake-umami.js`, which answers the metrics endpoint and records requests: path matching per locale, pagination, the API key header, Umami failures, duplicate cleanup and the endpoint. The widget's summary and its admin route (401 without an admin session) are covered in the same suite. `tests/frontend-url.test.js` covers the path parser.
+`tests/article-stats.test.ts` runs against `tests/helpers/fake-umami.ts`, which answers the metrics endpoint and records requests: path matching per locale, pagination, the API key header, Umami failures, duplicate cleanup and the endpoint. The widget's summary and its admin route (401 without an admin session) are covered in the same suite. `tests/frontend-url.test.ts` covers the path parser.

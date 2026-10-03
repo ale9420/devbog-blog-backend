@@ -74,13 +74,13 @@ Served by Fedify, outside Strapi auth: `/.well-known/webfinger`, `/nodeinfo/2.1`
 
 ```bash
 npm test                     # all suites, SQLite, one database file per Jest worker
-npx jest tests/fediverse-phase3.test.js --forceExit   # one suite (run npm run build:fediverse first)
+npx jest tests/fediverse-phase3.test.ts --forceExit   # one suite (run npm run build:fediverse first)
 TEST_DATABASE_URL=postgres://user:pass@127.0.0.1:5432/postgres npm test   # PostgreSQL, as in production
 ```
 
-- Suites boot a real Strapi; they set `FEDIVERSE_ENABLED` at the top of the file, and `tests/fediverse-disabled.test.js` covers the switched-off case.
-- `tests/helpers/remote-actor.js` starts a fake remote server (signed actor + recording inbox); `postSignedActivity()` signs a POST with Fedify's `signRequest`. `allowPrivateAddress` is on only when `NODE_ENV=test`, so 127.0.0.1 actors can be dereferenced.
-- Wait for async work with `tests/helpers/wait-until.js`; for "nothing happened" assertions use a short settle delay.
+- Suites boot a real Strapi; they set `FEDIVERSE_ENABLED` in `beforeAll`, before `setupStrapi()`, and `tests/fediverse-disabled.test.ts` covers the switched-off case.
+- `tests/helpers/remote-actor.ts` starts a fake remote server (signed actor + recording inbox); `postSignedActivity()` signs a POST with Fedify's `signRequest`. `allowPrivateAddress` is on only when `NODE_ENV=test`, so 127.0.0.1 actors can be dereferenced.
+- Wait for async work with `tests/helpers/wait-until.ts`; for "nothing happened" assertions use a short settle delay.
 - Same-origin forgery cases matter: Fedify already refuses embedded objects from a different origin, so test forgery with ids on the sender's own origin.
 
 ## Testing against the real fediverse

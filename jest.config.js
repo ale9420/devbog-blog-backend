@@ -11,7 +11,7 @@ const ESM_PACKAGES = [
 /** @type {import('jest').Config} */
 module.exports = {
   testEnvironment: 'node',
-  testMatch: ['**/tests/**/*.test.js'],
+  testMatch: ['**/tests/**/*.test.[jt]s'],
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
@@ -21,7 +21,7 @@ module.exports = {
     '/.strapi/',
   ],
   modulePathIgnorePatterns: ['<rootDir>/dist/', '<rootDir>/build/'],
-  setupFilesAfterEnv: ['./tests/jest.setup.js'],
+  setupFilesAfterEnv: ['./tests/jest.setup.ts'],
   transform: {
     '^.+\\.[cm]?[jt]sx?$': '<rootDir>/tests/helpers/esbuild-transformer.js',
   },

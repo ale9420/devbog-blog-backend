@@ -1,0 +1,16 @@
+{
+  // Type-checks the test suites (`npm run typecheck`). Jest itself only
+  // transpiles them with esbuild (tests/helpers/esbuild-transformer.js), so
+  // without this nothing would catch a type error in a test.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // Node16 like the fediverse plugin, whose sources and @fedify/* exports
+    // some suites import directly.
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "noEmit": true,
+    "incremental": false
+  },
+  "include": ["./**/*.ts", "../types/generated/**/*.ts"],
+  "exclude": []
+}
