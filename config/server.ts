@@ -6,7 +6,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server =>
   proxy: { koa: true },
   url: env('URL', 'http://localhost:1337'),
   app: {
-    keys: env.array('APP_KEYS'),
+    // Required: Strapi refuses to start without them (npm run generate:keys).
+    keys: env.array('APP_KEYS') as string[],
   },
   // Admin MCP endpoint (/mcp), authenticated with admin API tokens; anyone
   // holding one can read and write content. Set to false where it isn't used.

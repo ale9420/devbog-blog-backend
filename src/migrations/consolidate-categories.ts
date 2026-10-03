@@ -167,7 +167,7 @@ interface CategoryDocument {
   rows: CategoryRow[];
 }
 
-type CategoryFields = Pick<CategoryRow, 'slug' | 'key' | 'bird' | 'pillar' | 'order'> &
+type CategoryFields = Pick<CategoryTarget, 'slug' | 'key' | 'bird' | 'pillar' | 'order'> &
   CategoryText;
 
 function fieldsOf(target: CategoryTarget, locale: CategoryLocale): CategoryFields {
